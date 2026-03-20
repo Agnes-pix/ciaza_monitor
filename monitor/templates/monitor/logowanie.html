@@ -1,0 +1,26 @@
+{% extends 'monitor/base.html' %}
+{% block title %}Logowanie{% endblock %}
+{% block content %}
+<div class="karta" style="max-width:400px; margin:50px auto;">
+    <h2 style="text-align:center;"> Monitor Ciąży</h2>
+    <form method="POST">
+        {% csrf_token %}
+        {% for pole in formularz %}
+        <div>
+            <label>{{ pole.label }}</label>
+            {{ pole }}
+            {% if pole.errors %}
+                <div class="blad">{{ pole.errors }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+        <button type="submit" class="btn" style="width:100%;">
+            Zaloguj się
+        </button>
+    </form>
+    <p style="text-align:center; margin-top:15px;">
+        Nie masz konta?
+        <a href="{% url 'rejestracja' %}">Zarejestruj się</a>
+    </p>
+</div>
+{% endblock %}

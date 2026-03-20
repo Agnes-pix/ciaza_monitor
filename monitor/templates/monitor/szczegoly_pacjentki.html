@@ -1,0 +1,45 @@
+{% extends 'monitor/base.html' %}
+{% block title %}{{ pacjentka }}{% endblock %}
+{% block content %}
+<a href="{% url 'panel_lekarza' %}" class="btn btn-secondary">← Powrót</a>
+<h1>{{ pacjentka }}</h1>
+<p>Termin porodu: <strong>{{ pacjentka.przewidywana_data_porodu }}</strong></p>
+
+<div class="wiersz">
+    <div class="kolumna">
+        <div class="karta">
+            <h3> Pomiary</h3>
+            <table>
+                <thead>
+                    <tr><th>Rodzaj</th><th>Wartość</th><th>Data</th></tr>
+                </thead>
+                <tbody>
+                    {% for p in pomiary %}
+                    <tr>
+                        <td>{{ p.get_typ_display }}</td>
+                        <td>{{ p.wartosc }}</td>
+                        <td>{{ p.data_pomiaru|date:"d.m.Y H:i" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" style="color:gray;">Brak pomiarów</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="kolumna">
+        <div class="karta">
+            <h3> Recepty</h3>
+            {% for r in recepty %}
+                <p><strong>{{ r.nazwa_leku }}</strong><br>
+                <small>{{ r.dawkowanie }}</small></p>
+            {% empty %}
+                <p style="color:gray;">Brak recept</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

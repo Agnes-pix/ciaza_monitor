@@ -1,0 +1,90 @@
+{% extends 'monitor/base.html' %}
+{% block title %}Moje dane{% endblock %}
+{% block content %}
+<h1> Moje dane zdrowotne</h1>
+
+<div class="wiersz">
+    <div class="kolumna">
+
+        <div class="karta">
+            <h3>Dodaj pomiar</h3>
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="akcja" value="dodaj_pomiar">
+                {% for pole in f_pomiar %}
+                <div>
+                    <label>{{ pole.label }}</label>
+                    {{ pole }}
+                    {% if pole.errors %}
+                        <div class="blad">{{ pole.errors }}</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                <button type="submit" class="btn">Zapisz pomiar</button>
+            </form>
+        </div>
+
+        <div class="karta">
+            <h3> Dodaj wizytę</h3>
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="akcja" value="dodaj_wizyte">
+                {% for pole in f_wizyta %}
+                <div>
+                    <label>{{ pole.label }}</label>
+                    {{ pole }}
+                </div>
+                {% endfor %}
+                <button type="submit" class="btn">Zapisz wizytę</button>
+            </form>
+        </div>
+
+    </div>
+
+    <div class="kolumna">
+
+        <div class="karta">
+            <h3> Historia pomiarów</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Rodzaj</th><th>Wartość</th>
+                        <th>Data</th><th>Samopoczucie</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in historia_pomiarow %}
+                    <tr>
+                        <td>{{ p.get_typ_display }}</td>
+                        <td><strong>{{ p.wartosc }}</strong></td>
+                        <td>{{ p.data_pomiaru|date:"d.m.Y H:i" }}</td>
+                        <td>{{ p.get_samopoczucie_display|default:"–" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" style="text-align:center; color:gray;">
+                            Brak pomiarów
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="karta">
+            <h3> Zaplanowane wizyty</h3>
+            {% for w in historia_wizyt %}
+                <p><strong>{{ w.specjalizacja }}</strong> –
+                {{ w.data_wizyty|date:"d.m.Y H:i" }}<br>
+                 {{ w.miejsce }}<br>
+                <small style="color:{% if w.odbyta %}green{% else %}orange{% endif %}">
+                    {% if w.odbyta %}Odbyta{% else %}Zaplanowana{% endif %}
+                </small></p>
+            {% empty %}
+                <p style="color:gray;">Brak wizyt</p>
+            {% endfor %}
+        </div>
+
+    </div>
+</div>
+{% endblock %}

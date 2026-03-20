@@ -1,0 +1,97 @@
+{% extends 'monitor/base.html' %}
+{% block title %}Rejestracja{% endblock %}
+
+{% block content %}
+<div class="karta" style="max-width:500px; margin:30px auto;">
+    <h2>Rejestracja</h2>
+
+    {% if f_user.errors %}
+        <div class="blad">
+            <strong>Błędy w danych konta:</strong>
+            {{ f_user.errors }}
+        </div>
+    {% endif %}
+
+    <form method="POST" id="formularz-rejestracji">
+        {% csrf_token %}
+
+        <h3>Dane konta</h3>
+        {% for pole in f_user %}
+        <div>
+            <label>{{ pole.label }}</label>
+            {{ pole }}
+            {% if pole.errors %}
+                <div class="blad">{{ pole.errors }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+
+        <!-- Sekcja pacjentki -->
+        <div id="dane-pacjentki">
+            <h3>🤱 Dane medyczne</h3>
+            {% if f_dane_pacjentka.errors %}
+                <div class="blad">{{ f_dane_pacjentka.errors }}</div>
+            {% endif %}
+            {% for pole in f_dane_pacjentka %}
+            <div>
+                <label>{{ pole.label }}</label>
+                {{ pole }}
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Sekcja lekarza – ukryta -->
+        <div id="dane-lekarza" style="display:none;">
+            <h3>👨‍⚕️ Dane lekarza</h3>
+            {% for pole in f_dane_lekarz %}
+            <div>
+                <label>{{ pole.label }}</label>
+                {{ pole }}
+            </div>
+            {% endfor %}
+        </div>
+
+        <button type="submit" class="btn" style="width:100%; margin-top:15px;">
+            Zarejestruj się
+        </button>
+    </form>
+    <p style="text-align:center;">
+        Masz konto? <a href="{% url 'login' %}">Zaloguj się</a>
+    </p>
+</div>
+
+<script>
+const polaPacjentki = document.querySelectorAll('#dane-pacjentki input, #dane-pacjentki select');
+const polaLekarza = document.querySelectorAll('#dane-lekarza input, #dane-lekarza select');
+
+function ustawWymagane(pola, czyWymagane) {
+    pola.forEach(function(pole) {
+        if (czyWymagane) {
+            pole.setAttribute('required', 'required');
+        } else {
+            pole.removeAttribute('required');
+        }
+    });
+}
+
+// Domyślnie pacjentka
+ustawWymagane(polaPacjentki, true);
+ustawWymagane(polaLekarza, false);
+
+document.querySelectorAll('input[name="rola"]').forEach(function(radio) {
+    radio.addEventListener('change', function() {
+        if (this.value === 'lekarz') {
+            document.getElementById('dane-lekarza').style.display = 'block';
+            document.getElementById('dane-pacjentki').style.display = 'none';
+            ustawWymagane(polaLekarza, true);
+            ustawWymagane(polaPacjentki, false);
+        } else {
+            document.getElementById('dane-pacjentki').style.display = 'block';
+            document.getElementById('dane-lekarza').style.display = 'none';
+            ustawWymagane(polaPacjentki, true);
+            ustawWymagane(polaLekarza, false);
+        }
+    });
+});
+</script>
+{% endblock %}

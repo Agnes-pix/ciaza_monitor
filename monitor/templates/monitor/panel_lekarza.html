@@ -1,0 +1,57 @@
+{% extends 'monitor/base.html' %}
+{% block title %}Panel lekarza{% endblock %}
+{% block content %}
+<h1> Panel lekarza</h1>
+
+<div class="wiersz">
+    <div class="kolumna">
+        <div class="karta">
+            <h3> Pacjentki</h3>
+            {% for p in pacjentki %}
+            <p>
+                <strong>{{ p }}</strong><br>
+                <small>Termin: {{ p.przewidywana_data_porodu }}</small><br>
+                <a href="{% url 'szczegoly_pacjentki' p.id %}"
+                   class="btn" style="margin-top:5px;">
+                    Szczegóły
+                </a>
+            </p>
+            {% empty %}
+                <p style="color:gray;">Brak pacjentek</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="kolumna">
+        <div class="karta">
+            <h3> Wypisz receptę</h3>
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="akcja" value="wypisz_recepte">
+                {% for pole in f_recepta %}
+                <div>
+                    <label>{{ pole.label }}</label>
+                    {{ pole }}
+                </div>
+                {% endfor %}
+                <button type="submit" class="btn">Wypisz receptę</button>
+            </form>
+        </div>
+
+        <div class="karta">
+            <h3> Umów wizytę</h3>
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="akcja" value="umow_wizyte">
+                {% for pole in f_wizyta %}
+                <div>
+                    <label>{{ pole.label }}</label>
+                    {{ pole }}
+                </div>
+                {% endfor %}
+                <button type="submit" class="btn">Umów wizytę</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

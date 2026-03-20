@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Monitor Cukrzycy Ciążowej{% endblock %}</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 1000px;
+               margin: 0 auto; padding: 20px; background-color: #fce4ec; }
+        nav { background-color: #880e4f; padding: 10px 20px;
+              border-radius: 8px; margin-bottom: 20px;
+              display: flex; justify-content: space-between; align-items: center; }
+        nav a { color: white; text-decoration: none;
+                margin-right: 15px; font-weight: bold; }
+        nav a:hover { text-decoration: underline; }
+        .karta { background: white; padding: 25px; border-radius: 8px;
+                 box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h1, h2 { color: #880e4f; }
+        .btn { background-color: #e91e8c; color: white; padding: 8px 16px;
+               border: none; border-radius: 5px; cursor: pointer;
+               text-decoration: none; display: inline-block; }
+        .btn:hover { background-color: #880e4f; }
+        .btn-secondary { background-color: #666; }
+        input, select, textarea { width: 100%; padding: 8px;
+               margin: 5px 0 15px 0; border: 1px solid #ccc;
+               border-radius: 4px; box-sizing: border-box; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px; text-align: left;
+                 border-bottom: 1px solid #eee; }
+        th { background-color: #fce4ec; color: #880e4f; }
+        .sukces { background: #d4edda; color: #155724;
+                  padding: 10px; border-radius: 5px; margin-bottom: 15px; }
+        .blad { background: #f8d7da; color: #721c24;
+                padding: 10px; border-radius: 5px; margin-bottom: 15px; }
+        .wiersz { display: flex; gap: 20px; }
+        .kolumna { flex: 1; }
+    </style>
+</head>
+<body>
+{% if user.is_authenticated %}
+<nav>
+    <div>
+        <span style="color:white; font-size:1.2em; font-weight:bold;">
+            Monitor Cukrzycy Ciążowej
+        </span>
+        {% if not user.is_staff %}
+            <a href="{% url 'dashboard' %}"> Strona główna</a>
+            <a href="{% url 'pomiary' %}"> Moje dane</a>
+        {% else %}
+            <a href="{% url 'panel_lekarza' %}"> Panel lekarza</a>
+        {% endif %}
+    </div>
+    <div>
+        <span style="color:white;">{{ user.first_name }} {{ user.last_name }}</span>
+        <a href="{% url 'wyloguj' %}" style="margin-left:15px;">Wyloguj</a>
+    </div>
+</nav>
+{% endif %}
+{% block content %}{% endblock %}
+</body>
+</html>

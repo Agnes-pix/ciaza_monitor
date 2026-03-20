@@ -1,0 +1,35 @@
+{% extends 'monitor/base.html' %}
+{% block title %}Formularz{% endblock %}
+
+{% block content %}
+<div class="karta">
+    <h2> Formularz samopoczucia</h2>
+    <p>Metoda zapytania: <strong>{{ request.method }}</strong></p>
+
+    {% if wynik %}
+        {% if 'Dziękujemy' in wynik %}
+            <div class="sukces"> {{ wynik }}</div>
+        {% else %}
+            <div class="blad"> {{ wynik }}</div>
+        {% endif %}
+    {% endif %}
+
+    <form method="POST">
+        {% csrf_token %}
+        <label>Twoje imię:</label>
+        <input type="text" name="imie" placeholder="Wpisz imię..." required>
+
+        <label>Jak się czujesz?</label>
+        <select name="samopoczucie" required>
+            <option value="">-- Wybierz --</option>
+            <option value="Bardzo dobrze ">Bardzo dobrze </option>
+            <option value="Dobrze ">Dobrze </option>
+            <option value="Średnio ">Średnio </option>
+            <option value="Źle ">Źle </option>
+            <option value="Bardzo źle ">Bardzo źle </option>
+        </select>
+
+        <button type="submit" class="btn">Wyślij formularz</button>
+    </form>
+</div>
+{% endblock %}
