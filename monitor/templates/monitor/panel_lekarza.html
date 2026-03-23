@@ -1,56 +1,83 @@
 {% extends 'monitor/base.html' %}
+{% load static %}
 {% block title %}Panel lekarza{% endblock %}
-{% block content %}
-<h1> Panel lekarza</h1>
 
-<div class="wiersz">
-    <div class="kolumna">
-        <div class="karta">
-            <h3> Pacjentki</h3>
-            {% for p in pacjentki %}
-            <p>
-                <strong>{{ p }}</strong><br>
-                <small>Termin: {{ p.przewidywana_data_porodu }}</small><br>
-                <a href="{% url 'szczegoly_pacjentki' p.id %}"
-                   class="btn" style="margin-top:5px;">
-                    Szczegóły
-                </a>
-            </p>
-            {% empty %}
-                <p style="color:gray;">Brak pacjentek</p>
-            {% endfor %}
+{% block content %}
+<h3 class="fw-bold mb-4">
+    <i class="bi bi-hospital-fill me-2"></i>Panel lekarza
+</h3>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header fw-bold">
+                <i class="bi bi-people-fill me-2"></i>Pacjentki
+            </div>
+            <ul class="list-group list-group-flush">
+                {% for p in pacjentki %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <i class="bi bi-person-circle me-1 text-primary"></i>
+                        <strong>{{ p }}</strong><br>
+                        <small class="text-muted">
+                            Termin: {{ p.przewidywana_data_porodu }}
+                        </small>
+                    </div>
+                    <a href="{% url 'szczegoly_pacjentki' p.id %}"
+                       class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-eye me-1"></i>Szczegóły
+                    </a>
+                </li>
+                {% empty %}
+                <li class="list-group-item text-muted text-center">
+                    Brak pacjentek
+                </li>
+                {% endfor %}
+            </ul>
         </div>
     </div>
 
-    <div class="kolumna">
-        <div class="karta">
-            <h3> Wypisz receptę</h3>
-            <form method="POST">
-                {% csrf_token %}
-                <input type="hidden" name="akcja" value="wypisz_recepte">
-                {% for pole in f_recepta %}
-                <div>
-                    <label>{{ pole.label }}</label>
-                    {{ pole }}
-                </div>
-                {% endfor %}
-                <button type="submit" class="btn">Wypisz receptę</button>
-            </form>
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header bg-danger text-white fw-bold">
+                <i class="bi bi-capsule-pill me-2"></i>Wypisz receptę
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="akcja" value="wypisz_recepte">
+                    {% for pole in f_recepta %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">{{ pole.label }}</label>
+                        {{ pole }}
+                    </div>
+                    {% endfor %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-file-earmark-plus me-2"></i>Wypisz receptę
+                    </button>
+                </form>
+            </div>
         </div>
 
-        <div class="karta">
-            <h3> Umów wizytę</h3>
-            <form method="POST">
-                {% csrf_token %}
-                <input type="hidden" name="akcja" value="umow_wizyte">
-                {% for pole in f_wizyta %}
-                <div>
-                    <label>{{ pole.label }}</label>
-                    {{ pole }}
-                </div>
-                {% endfor %}
-                <button type="submit" class="btn">Umów wizytę</button>
-            </form>
+        <div class="card">
+            <div class="card-header fw-bold" style="background-color:#fff3cd;">
+                <i class="bi bi-calendar-plus-fill me-2 text-warning"></i>Umów wizytę
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="akcja" value="umow_wizyte">
+                    {% for pole in f_wizyta %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">{{ pole.label }}</label>
+                        {{ pole }}
+                    </div>
+                    {% endfor %}
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bi bi-calendar-check me-2"></i>Umów wizytę
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
 </div>

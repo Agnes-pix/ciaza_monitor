@@ -2,59 +2,93 @@
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
-    <title>{% block title %}Monitor Cukrzycy Ciążowej{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Monitor Ciąży{% endblock %}</title>
+
+    <!--
+        {% load static %} = mówi Django że używamy plików statycznych
+        MUSI być na początku każdego szablonu używającego % static %
+    -->
+    {% load static %}
+
+    <!--
+        {% static 'ścieżka' %} = Django zamienia to na pełny URL
+        np. /static/monitor/css/bootstrap.min.css
+        Pliki są serwowane Z NASZEGO SERWERA – nie z internetu!
+    -->
+    <link rel="stylesheet" href="{% static 'monitor/css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'monitor/css/bootstrap-icons.min.css' %}">
+
     <style>
-        body { font-family: Arial, sans-serif; max-width: 1000px;
-               margin: 0 auto; padding: 20px; background-color: #fce4ec; }
-        nav { background-color: #880e4f; padding: 10px 20px;
-              border-radius: 8px; margin-bottom: 20px;
-              display: flex; justify-content: space-between; align-items: center; }
-        nav a { color: white; text-decoration: none;
-                margin-right: 15px; font-weight: bold; }
-        nav a:hover { text-decoration: underline; }
-        .karta { background: white; padding: 25px; border-radius: 8px;
-                 box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        h1, h2 { color: #880e4f; }
-        .btn { background-color: #e91e8c; color: white; padding: 8px 16px;
-               border: none; border-radius: 5px; cursor: pointer;
-               text-decoration: none; display: inline-block; }
-        .btn:hover { background-color: #880e4f; }
-        .btn-secondary { background-color: #666; }
-        input, select, textarea { width: 100%; padding: 8px;
-               margin: 5px 0 15px 0; border: 1px solid #ccc;
-               border-radius: 4px; box-sizing: border-box; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 10px; text-align: left;
-                 border-bottom: 1px solid #eee; }
-        th { background-color: #fce4ec; color: #880e4f; }
-        .sukces { background: #d4edda; color: #155724;
-                  padding: 10px; border-radius: 5px; margin-bottom: 15px; }
-        .blad { background: #f8d7da; color: #721c24;
-                padding: 10px; border-radius: 5px; margin-bottom: 15px; }
-        .wiersz { display: flex; gap: 20px; }
-        .kolumna { flex: 1; }
+        /* Własne style nadpisujące Bootstrap */
+        :root {
+            --kolor-glowny: #880e4f;
+            --kolor-jasny: #fce4ec;
+        }
+        body { background-color: #fce4ec; }
+        .navbar { background: linear-gradient(135deg, #880e4f, #e91e8c) !important; }
+        .card { border-radius: 12px; box-shadow: 0 2px 15px rgba(0,0,0,0.08); }
+        .btn-rozowy { background-color: #e91e8c; border-color: #e91e8c; color: white; }
+        .btn-rozowy:hover { background-color: #880e4f; border-color: #880e4f; color: white; }
     </style>
 </head>
 <body>
+
 {% if user.is_authenticated %}
-<nav>
-    <div>
-        <span style="color:white; font-size:1.2em; font-weight:bold;">
-            Monitor Cukrzycy Ciążowej
+<nav class="navbar navbar-expand-lg navbar-dark mb-4">
+    <div class="container">
+        <span class="navbar-brand fw-bold">
+            <i class="bi bi-heart-pulse-fill me-2"></i>Monitor Ciąży
         </span>
-        {% if not user.is_staff %}
-            <a href="{% url 'dashboard' %}"> Strona główna</a>
-            <a href="{% url 'pomiary' %}"> Moje dane</a>
-        {% else %}
-            <a href="{% url 'panel_lekarza' %}"> Panel lekarza</a>
-        {% endif %}
-    </div>
-    <div>
-        <span style="color:white;">{{ user.first_name }} {{ user.last_name }}</span>
-        <a href="{% url 'wyloguj' %}" style="margin-left:15px;">Wyloguj</a>
+
+        <!-- Przycisk hamburger na telefonie -->
+        <button class="navbar-toggler" type="button"
+                data-bs-toggle="collapse" data-bs-target="#nawigacja">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="nawigacja">
+            <div class="navbar-nav me-auto">
+                {% if not user.is_staff %}
+                    <!-- Zakładki pacjentki -->
+                    <a class="nav-link" href="{% url 'dashboard' %}">
+                        <i class="bi bi-house-fill me-1"></i>Strona główna
+                    </a>
+                    <a class="nav-link" href="{% url 'pomiary' %}">
+                        <i class="bi bi-clipboard2-pulse me-1"></i>Moje dane
+                    </a>
+                {% else %}
+                    <!-- Zakładka lekarza -->
+                    <a class="nav-link" href="{% url 'panel_lekarza' %}">
+                        <i class="bi bi-hospital me-1"></i>Panel lekarza
+                    </a>
+                {% endif %}
+            </div>
+
+            <!-- Użytkownik i wyloguj -->
+            <div class="navbar-nav ms-auto align-items-center">
+                <span class="navbar-text text-white me-3">
+                    <i class="bi bi-person-circle me-1"></i>
+                    {{ user.first_name }} {{ user.last_name }}
+                </span>
+                <a class="btn btn-outline-light btn-sm" href="{% url 'wyloguj' %}">
+                    <i class="bi bi-box-arrow-right me-1"></i>Wyloguj
+                </a>
+            </div>
+        </div>
     </div>
 </nav>
 {% endif %}
-{% block content %}{% endblock %}
+
+<div class="container pb-5">
+    {% block content %}{% endblock %}
+</div>
+
+<!--
+    Bootstrap JS na końcu body – przyspiesza ładowanie strony
+    bundle = zawiera Popper.js (potrzebny do menu, tooltipów)
+-->
+<script src="{% static 'monitor/js/bootstrap.bundle.min.js' %}"></script>
+{% block extra_js %}{% endblock %}
 </body>
 </html>

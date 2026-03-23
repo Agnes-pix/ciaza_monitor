@@ -1,26 +1,35 @@
 {% extends 'monitor/base.html' %}
+{% load static %}
 {% block title %}Logowanie{% endblock %}
+
 {% block content %}
-<div class="karta" style="max-width:400px; margin:50px auto;">
-    <h2 style="text-align:center;"> Monitor Ciąży</h2>
-    <form method="POST">
-        {% csrf_token %}
-        {% for pole in formularz %}
-        <div>
-            <label>{{ pole.label }}</label>
-            {{ pole }}
-            {% if pole.errors %}
-                <div class="blad">{{ pole.errors }}</div>
-            {% endif %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-4">
+        <div class="card shadow">
+            <div class="card-body p-4">
+                <div class="text-center mb-4">
+                    <i class="bi bi-heart-pulse-fill text-danger" style="font-size:3rem;"></i>
+                    <h3 class="mt-2 fw-bold">Monitor Ciąży</h3>
+                </div>
+                <form method="POST">
+                    {% csrf_token %}
+                    {% for pole in formularz %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">{{ pole.label }}</label>
+                        {{ pole }}
+                    </div>
+                    {% endfor %}
+                    <button type="submit" class="btn btn-rozowy w-100">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>Zaloguj się
+                    </button>
+                </form>
+                <hr>
+                <p class="text-center mb-0">
+                    Nie masz konta?
+                    <a href="{% url 'rejestracja' %}">Zarejestruj się</a>
+                </p>
+            </div>
         </div>
-        {% endfor %}
-        <button type="submit" class="btn" style="width:100%;">
-            Zaloguj się
-        </button>
-    </form>
-    <p style="text-align:center; margin-top:15px;">
-        Nie masz konta?
-        <a href="{% url 'rejestracja' %}">Zarejestruj się</a>
-    </p>
+    </div>
 </div>
 {% endblock %}

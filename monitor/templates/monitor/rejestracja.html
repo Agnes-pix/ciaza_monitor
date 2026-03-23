@@ -1,68 +1,75 @@
 {% extends 'monitor/base.html' %}
+{% load static %}
 {% block title %}Rejestracja{% endblock %}
 
 {% block content %}
-<div class="karta" style="max-width:500px; margin:30px auto;">
-    <h2>Rejestracja</h2>
-
-    {% if f_user.errors %}
-        <div class="blad">
-            <strong>Błędy w danych konta:</strong>
-            {{ f_user.errors }}
-        </div>
-    {% endif %}
-
-    <form method="POST" id="formularz-rejestracji">
-        {% csrf_token %}
-
-        <h3>Dane konta</h3>
-        {% for pole in f_user %}
-        <div>
-            <label>{{ pole.label }}</label>
-            {{ pole }}
-            {% if pole.errors %}
-                <div class="blad">{{ pole.errors }}</div>
-            {% endif %}
-        </div>
-        {% endfor %}
-
-        <!-- Sekcja pacjentki -->
-        <div id="dane-pacjentki">
-            <h3>🤱 Dane medyczne</h3>
-            {% if f_dane_pacjentka.errors %}
-                <div class="blad">{{ f_dane_pacjentka.errors }}</div>
-            {% endif %}
-            {% for pole in f_dane_pacjentka %}
-            <div>
-                <label>{{ pole.label }}</label>
-                {{ pole }}
+<div class="row justify-content-center mt-4">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header text-white fw-bold py-3"
+                 style="background: linear-gradient(135deg, #880e4f, #e91e8c);">
+                <i class="bi bi-person-plus-fill me-2"></i>Rejestracja
             </div>
-            {% endfor %}
-        </div>
+            <div class="card-body p-4">
 
-        <!-- Sekcja lekarza – ukryta -->
-        <div id="dane-lekarza" style="display:none;">
-            <h3>👨‍⚕️ Dane lekarza</h3>
-            {% for pole in f_dane_lekarz %}
-            <div>
-                <label>{{ pole.label }}</label>
-                {{ pole }}
+                {% if f_user.errors %}
+                    <div class="alert alert-danger">{{ f_user.errors }}</div>
+                {% endif %}
+
+                <form method="POST">
+                    {% csrf_token %}
+                    <h5 class="mb-3">
+                        <i class="bi bi-key-fill me-2"></i>Dane konta
+                    </h5>
+                    {% for pole in f_user %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">{{ pole.label }}</label>
+                        {{ pole }}
+                        {% if pole.errors %}
+                            <div class="text-danger small">{{ pole.errors }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+
+                    <div id="dane-pacjentki">
+                        <h5 class="mb-3 mt-3">
+                            <i class="bi bi-clipboard2-heart me-2"></i>Dane medyczne
+                        </h5>
+                        {% for pole in f_dane_pacjentka %}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">{{ pole.label }}</label>
+                            {{ pole }}
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div id="dane-lekarza" style="display:none;">
+                        <h5 class="mb-3 mt-3">
+                            <i class="bi bi-hospital me-2"></i>Dane lekarza
+                        </h5>
+                        {% for pole in f_dane_lekarz %}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">{{ pole.label }}</label>
+                            {{ pole }}
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <button type="submit" class="btn btn-rozowy w-100 mt-3">
+                        <i class="bi bi-check-circle-fill me-2"></i>Zarejestruj się
+                    </button>
+                </form>
+                <p class="text-center mt-3">
+                    Masz konto? <a href="{% url 'login' %}">Zaloguj się</a>
+                </p>
             </div>
-            {% endfor %}
         </div>
-
-        <button type="submit" class="btn" style="width:100%; margin-top:15px;">
-            Zarejestruj się
-        </button>
-    </form>
-    <p style="text-align:center;">
-        Masz konto? <a href="{% url 'login' %}">Zaloguj się</a>
-    </p>
+    </div>
 </div>
 
 <script>
-const polaPacjentki = document.querySelectorAll('#dane-pacjentki input, #dane-pacjentki select');
-const polaLekarza = document.querySelectorAll('#dane-lekarza input, #dane-lekarza select');
+const polaPacjentki = document.querySelectorAll('#dane-pacjentki input');
+const polaLekarza = document.querySelectorAll('#dane-lekarza input');
 
 function ustawWymagane(pola, czyWymagane) {
     pola.forEach(function(pole) {
@@ -74,7 +81,6 @@ function ustawWymagane(pola, czyWymagane) {
     });
 }
 
-// Domyślnie pacjentka
 ustawWymagane(polaPacjentki, true);
 ustawWymagane(polaLekarza, false);
 

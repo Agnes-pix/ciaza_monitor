@@ -1,72 +1,123 @@
 {% extends 'monitor/base.html' %}
+{% load static %}
 {% block title %}Strona główna{% endblock %}
+
 {% block content %}
-<h1>Witaj, {{ pacjentka.uzytkownik.first_name }}! </h1>
+<h2 class="fw-bold mb-4">
+    Witaj, {{ pacjentka.uzytkownik.first_name }}!
+    <i class="bi bi-balloon-heart-fill text-danger ms-2"></i>
+</h2>
 
-<div class="wiersz">
-    <div class="kolumna">
-        <div class="karta" style="text-align:center;">
-            <h3>Do porodu pozostało</h3>
-            <div style="font-size:4rem; font-weight:bold; color:#e91e8c;">
-                {{ dni_do_porodu }}
+<div class="row">
+    <!-- Odliczanie -->
+    <div class="col-md-4 mb-4">
+        <div class="card text-center h-100">
+            <div class="card-body p-4">
+                <i class="bi bi-calendar-heart text-danger mb-2" style="font-size:2.5rem;"></i>
+                <p class="text-muted mb-1 fw-semibold">Do porodu pozostało</p>
+                <div style="font-size:4rem; font-weight:900; color:#e91e8c;">
+                    {{ dni_do_porodu }}
+                </div>
+                <p class="text-muted">dni</p>
+                <span class="badge bg-light text-dark border">
+                    <i class="bi bi-calendar3 me-1"></i>
+                    {{ pacjentka.przewidywana_data_porodu }}
+                </span>
             </div>
-            <p>dni</p>
-            <small>Termin: {{ pacjentka.przewidywana_data_porodu }}</small>
         </div>
     </div>
 
-    <div class="kolumna">
-        <div class="karta">
-            <h3>Nadchodzące wizyty</h3>
-            {% for wizyta in nadchodzace_wizyty %}
-                <p><strong>{{ wizyta.specjalizacja }}</strong><br>
-                {{ wizyta.data_wizyty|date:"d.m.Y H:i" }}<br>
-                <small>{{ wizyta.miejsce }}</small></p>
-            {% empty %}
-                <p style="color:gray;">Brak zaplanowanych wizyt</p>
-            {% endfor %}
+    <!-- Wizyty -->
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header fw-bold" style="background-color:#fff3cd;">
+                <i class="bi bi-calendar-check-fill me-2 text-warning"></i>
+                Nadchodzące wizyty
+            </div>
+            <ul class="list-group list-group-flush">
+                {% for wizyta in nadchodzace_wizyty %}
+                <li class="list-group-item">
+                    <strong>{{ wizyta.specjalizacja }}</strong><br>
+                    <small>
+                        <i class="bi bi-clock me-1"></i>
+                        {{ wizyta.data_wizyty|date:"d.m.Y H:i" }}
+                    </small><br>
+                    <small class="text-muted">
+                        <i class="bi bi-geo-alt me-1"></i>{{ wizyta.miejsce }}
+                    </small>
+                </li>
+                {% empty %}
+                <li class="list-group-item text-muted text-center py-3">
+                    Brak zaplanowanych wizyt
+                </li>
+                {% endfor %}
+            </ul>
+            <div class="card-footer bg-white">
+                <a href="{% url 'pomiary' %}" class="btn btn-sm btn-outline-warning w-100">
+                    <i class="bi bi-plus-circle me-1"></i>Dodaj wizytę
+                </a>
+            </div>
         </div>
     </div>
 
-    <div class="kolumna">
-        <div class="karta">
-            <h3>Recepty do realizacji</h3>
-            {% for recepta in recepty %}
-                <p><strong>{{ recepta.nazwa_leku }}</strong><br>
-                <small>{{ recepta.dawkowanie }}</small></p>
-            {% empty %}
-                <p style="color:gray;">Brak recept</p>
-            {% endfor %}
+    <!-- Recepty -->
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-danger text-white fw-bold">
+                <i class="bi bi-capsule-pill me-2"></i>Recepty do realizacji
+            </div>
+            <ul class="list-group list-group-flush">
+                {% for recepta in recepty %}
+                <li class="list-group-item">
+                    <strong>{{ recepta.nazwa_leku }}</strong><br>
+                    <small class="text-muted">{{ recepta.dawkowanie }}</small>
+                </li>
+                {% empty %}
+                <li class="list-group-item text-muted text-center py-3">
+                    Brak recept
+                </li>
+                {% endfor %}
+            </ul>
         </div>
     </div>
 </div>
 
-<div class="karta">
-    <h3>🩺 Ostatnie pomiary</h3>
-    <table>
-        <thead>
-            <tr>
-                <th>Rodzaj</th><th>Wartość</th>
-                <th>Data</th><th>Samopoczucie</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for p in ostatnie_pomiary %}
-            <tr>
-                <td>{{ p.get_typ_display }}</td>
-                <td><strong>{{ p.wartosc }}</strong></td>
-                <td>{{ p.data_pomiaru|date:"d.m.Y H:i" }}</td>
-                <td>{{ p.get_samopoczucie_display|default:"–" }}</td>
-            </tr>
-            {% empty %}
-            <tr>
-                <td colspan="4" style="text-align:center; color:gray;">
-                    Brak pomiarów.
-                    <a href="{% url 'pomiary' %}">Dodaj pierwszy</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<!-- Ostatnie pomiary -->
+<div class="card">
+    <div class="card-header fw-bold">
+        <i class="bi bi-activity me-2"></i>Ostatnie pomiary
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Rodzaj</th><th>Wartość</th>
+                    <th>Data</th><th>Samopoczucie</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in ostatnie_pomiary %}
+                <tr>
+                    <td>{{ p.get_typ_display }}</td>
+                    <td><strong>{{ p.wartosc }}</strong></td>
+                    <td>{{ p.data_pomiaru|date:"d.m.Y H:i" }}</td>
+                    <td>{{ p.get_samopoczucie_display|default:"–" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center text-muted py-3">
+                        Brak pomiarów.
+                        <a href="{% url 'pomiary' %}">Dodaj pierwszy</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="card-footer bg-white">
+        <a href="{% url 'pomiary' %}" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-arrow-right me-1"></i>Zobacz wszystkie
+        </a>
+    </div>
 </div>
 {% endblock %}
