@@ -52,7 +52,40 @@
         </div>
     </div>
 
+
+
+
+
     <div class="col-md-7">
+        <!-- WYKRES – Element dynamiczny nr 3 -->
+<div class="card mb-4">
+    <div class="card-header fw-bold">
+        <i class="bi bi-graph-up me-2"></i>Wykres pomiarów
+        <!-- Przyciski wyboru typu wykresu -->
+        <div class="btn-group btn-group-sm float-end">
+            <button class="btn btn-outline-danger btn-sm"
+                    onclick="pokazWykres('glukoza', this)">
+                Glukoza
+            </button>
+            <button class="btn btn-outline-primary btn-sm"
+                    onclick="pokazWykres('cisnienie', this)">
+                Ciśnienie
+            </button>
+            <button class="btn btn-outline-success btn-sm"
+                    onclick="pokazWykres('waga', this)">
+                Waga
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        <!-- canvas = miejsce gdzie Chart.js narysuje wykres -->
+        <canvas id="wykres" height="120"></canvas>
+        <p id="brak-danych" class="text-muted text-center d-none">
+            <i class="bi bi-info-circle me-1"></i>
+            Brak danych dla tego typu pomiaru
+        </p>
+    </div>
+</div>
         <div class="card mb-4">
             <div class="card-header fw-bold">
                 <i class="bi bi-table me-2"></i>Historia pomiarów
@@ -117,4 +150,116 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Dane z Django przekazane do JavaScript
+// {{ zmienna|safe }} = wyświetl bez escapowania znaków HTML
+// Dzięki temu Python dict staje się JavaScript object
+const daneGlukoza = {
+    etykiety: {{ dane_glukoza.etykiety|safe }},
+    wartosci: {{ dane_glukoza.wartosci|safe }}
+};
+const daneCisnienie_s = {
+    etykiety: {{ dane_cisnienie_s.etykiety|safe }},
+    wartosci: {{ dane_cisnienie_s.wartosci|safe }}
+};
+const daneCisnienie_r = {
+    etykiety: {{ dane_cisnienie_r.etykiety|safe }},
+    wartosci: {{ dane_cisnienie_r.wartosci|safe }}
+};
+const daneWaga = {
+    etykiety: {{ dane_waga.etykiety|safe }},
+    wartosci: {{ dane_waga.wartosci|safe }}
+};
+
+// Tworzymy wykres – Chart.js robi wszystko za nas!
+// new Chart(element, konfiguracja)
+let aktualnyWykres = null;
+
+function pokazWykres(typ, przycisk) {
+    // Zniszcz poprzedni wykres żeby nie nakładał się na nowy
+    if (aktualnyWykres) {
+        aktualnyWykres.destroy();
+    }
+
+    // Wybierz dane w zależności od przycisku
+    let dane, kolor, tytul;
+    if (typ === 'glukoza') {
+        dane = daneGlukoza;
+        kolor = '#e91e8c';
+        tytul = 'Glukoza (mg/dL)';
+    } else if (typ === 'cisnienie') {
+        // Ciśnienie ma dwie linie na jednym wykresie!
+        dane = daneCisnienie_s;
+        kolor = '#1976D2';
+        tytul = 'Ciśnienie (mmHg)';
+    } else {
+        dane = daneWaga;
+        kolor = '#4CAF50';
+        tytul = 'Waga (kg)';
+    }
+
+    const brakDanych = document.getElementById('brak-danych');
+
+    // Jeśli brak danych – pokaż komunikat
+    if (dane.etykiety.length === 0) {
+        brakDanych.classList.remove('d-none');
+        return;
+    }
+    brakDanych.classList.add('d-none');
+
+    // Pobieramy element canvas
+    const ctx = document.getElementById('wykres');
+
+    // Zestawy danych dla wykresu
+    let datasets = [{
+        label: tytul,
+        data: dane.wartosci,
+        borderColor: kolor,
+        backgroundColor: kolor + '33', // 33 = 20% przezroczystości
+        tension: 0.3,  // zaokrąglenie linii
+        fill: true,    // wypełnienie pod linią
+        pointRadius: 5,
+        pointHoverRadius: 8,
+    }];
+
+    // Dla ciśnienia dodajemy drugą linię (rozkurczowe)
+    if (typ === 'cisnienie') {
+        datasets.push({
+            label: 'Ciśnienie rozkurczowe (mmHg)',
+            data: daneCisnienie_r.wartosci,
+            borderColor: '#FF9800',
+            backgroundColor: '#FF980033',
+            tension: 0.3,
+            fill: false,
+            pointRadius: 5,
+        });
+    }
+
+    // Tworzymy wykres przez Chart.js
+    aktualnyWykres = new Chart(ctx, {
+        type: 'line',  // typ wykresu = liniowy
+        data: {
+            labels: dane.etykiety,  // etykiety osi X (daty)
+            datasets: datasets       // dane do wykresu
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'top' },
+                tooltip: { mode: 'index' }
+            },
+            scales: {
+                y: { beginAtZero: false }
+            }
+        }
+    });
+}
+
+// Pokaż wykres glukozy domyślnie przy załadowaniu strony
+pokazWykres('glukoza',
+    document.querySelector('button[onclick*="glukoza"]'));
+</script>
 {% endblock %}

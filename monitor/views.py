@@ -130,13 +130,30 @@ def pomiary(request):
                 wizyta.save()
                 return redirect('pomiary')
 
+    # Pobieramy dane do wykresu z bazy
+    # values_list = pobierz tylko te dwa pola zamiast całych obiektów
+    def pobierz_dane(typ):
+        rekordy = Pomiar.objects.filter(
+            pacjentka=pacjentka,
+            typ=typ
+        ).order_by('data_pomiaru').values_list('data_pomiaru', 'wartosc')
+        return {
+            # Formatujemy daty na stringi bo JS nie rozumie dat Pythona
+            'etykiety': [r[0].strftime('%d.%m %H:%M') for r in rekordy],
+            'wartosci': [r[1] for r in rekordy],
+        }
+
     return render(request, 'monitor/pomiary.html', {
         'f_pomiar': FormularzPomiaru(),
         'f_wizyta': FormularzWizyty(),
         'historia_pomiarow': pacjentka.pomiary.all(),
         'historia_wizyt': pacjentka.wizyty.all(),
+        # Dane do wykresu
+        'dane_glukoza': pobierz_dane('glukoza'),
+        'dane_cisnienie_s': pobierz_dane('cisnienie_s'),
+        'dane_cisnienie_r': pobierz_dane('cisnienie_r'),
+        'dane_waga': pobierz_dane('waga'),
     })
-
 
 # PANEL LEKARZA
 @tylko_lekarz
