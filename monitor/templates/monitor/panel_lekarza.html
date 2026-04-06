@@ -9,33 +9,79 @@
 
 <div class="row">
     <div class="col-md-4">
-        <div class="card mb-4">
-            <div class="card-header fw-bold">
-                <i class="bi bi-people-fill me-2"></i>Pacjentki
-            </div>
-            <ul class="list-group list-group-flush">
-                {% for p in pacjentki %}
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    <div>
-                        <i class="bi bi-person-circle me-1 text-primary"></i>
-                        <strong>{{ p }}</strong><br>
-                        <small class="text-muted">
-                            Termin: {{ p.przewidywana_data_porodu }}
-                        </small>
-                    </div>
-                    <a href="{% url 'szczegoly_pacjentki' p.id %}"
-                       class="btn btn-sm btn-outline-primary">
-                        <i class="bi bi-eye me-1"></i>Szczegóły
-                    </a>
-                </li>
-                {% empty %}
-                <li class="list-group-item text-muted text-center">
-                    Brak pacjentek
-                </li>
+
+    <!-- Formularz dodawania pacjentki po PESEL -->
+    <div class="card mb-4">
+        <div class="card-header fw-bold"
+             style="background: linear-gradient(135deg, #880e4f, #e91e8c);"
+             class="text-white">
+            <i class="bi bi-person-plus-fill me-2"></i>
+            <span class="text-white">Dodaj pacjentkę</span>
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="akcja" value="dodaj_pacjentke">
+                {% for pole in f_dodaj_pacjentke %}
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">{{ pole.label }}</label>
+                    {{ pole }}
+                    {% if pole.errors %}
+                        <div class="text-danger small mt-1">
+                            <i class="bi bi-exclamation-circle me-1"></i>
+                            {{ pole.errors }}
+                        </div>
+                    {% endif %}
+                </div>
                 {% endfor %}
-            </ul>
+                <button type="submit" class="btn btn-rozowy w-100">
+                    <i class="bi bi-search me-2"></i>Znajdź i dodaj pacjentkę
+                </button>
+            </form>
+
+            {% if komunikat %}
+                <div class="alert alert-info mt-3">
+                    <i class="bi bi-info-circle me-1"></i>{{ komunikat }}
+                </div>
+            {% endif %}
         </div>
     </div>
+
+    <!-- Lista moich pacjentek -->
+    <div class="card">
+        <div class="card-header fw-bold">
+            <i class="bi bi-people-fill me-2"></i>
+            Moje pacjentki
+            <span class="badge bg-secondary float-end">
+                {{ pacjentki.count }}
+            </span>
+        </div>
+        <ul class="list-group list-group-flush">
+            {% for relacja in pacjentki %}
+            <li class="list-group-item pacjentka-item d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="bi bi-person-circle me-1 text-primary"></i>
+                    <strong>{{ relacja.pacjentka }}</strong><br>
+                    <small class="text-muted">
+                        PESEL: {{ relacja.pacjentka.pesel }}<br>
+                        Termin: {{ relacja.pacjentka.przewidywana_data_porodu }}
+                    </small>
+                </div>
+                <a href="{% url 'szczegoly_pacjentki' relacja.pacjentka.id %}"
+                   class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-eye me-1"></i>Szczegóły
+                </a>
+            </li>
+            {% empty %}
+            <li class="list-group-item text-muted text-center py-4">
+                <i class="bi bi-person-x d-block mb-2" style="font-size:2rem"></i>
+                Brak pacjentek.<br>
+                <small>Dodaj pacjentkę wpisując jej PESEL powyżej.</small>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
 
     <div class="col-md-8">
         <div class="card mb-4">

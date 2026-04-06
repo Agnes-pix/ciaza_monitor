@@ -9,6 +9,7 @@ class Pacjentka(models.Model):
         User,
         on_delete=models.CASCADE
     )
+    pesel = models.CharField(max_length=11, unique=True) 
     data_urodzenia = models.DateField()
     przewidywana_data_porodu = models.DateField()
     telefon = models.CharField(max_length=20, blank=True)
@@ -135,3 +136,30 @@ class Lekarz(models.Model):
     class Meta:
         verbose_name = 'Lekarz'
         verbose_name_plural = 'Lekarze'
+
+# ================================================================
+# MODEL – PacjentkaLekarza
+# Lekarz dodaje pacjentkę po PESEL – tworzy się relacja
+# Relacja WIELE DO WIELU między Lekarzem a Pacjentką
+# ================================================================
+class PacjentkaLekarza(models.Model):
+    lekarz = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='moje_pacjentki'
+    )
+    pacjentka = models.ForeignKey(
+        Pacjentka,
+        on_delete=models.CASCADE,
+        related_name='moi_lekarze'
+    )
+    data_dodania = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        # unique_together = lekarz może mieć pacjentkę tylko raz na liście
+        unique_together = ['lekarz', 'pacjentka']
+        verbose_name = 'Pacjentka lekarza'
+        verbose_name_plural = 'Pacjentki lekarza'
+
+    def __str__(self):
+        return f"Dr {self.lekarz.last_name} – {self.pacjentka}"

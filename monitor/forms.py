@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 from .models import Pacjentka, Pomiar, WizytaLekarska, Recepta, Lekarz
-
+from .models import Pacjentka, Pomiar, WizytaLekarska, Recepta, Lekarz, PacjentkaLekarza
 
 class FormularzRejestracji(UserCreationForm):
     email = forms.EmailField(required=True, label='Email')
@@ -137,3 +137,57 @@ class FormularzWizytyLekarza(forms.ModelForm):
             'specjalizacja': 'Rodzaj wizyty',
             'notatki': 'Notatki',
         }
+
+class FormularzDanePacjentki(forms.ModelForm):
+    class Meta:
+        model = Pacjentka
+        fields = ['pesel', 'data_urodzenia', 'przewidywana_data_porodu', 'telefon']
+        widgets = {
+            'pesel': forms.TextInput(attrs={
+                'placeholder': 'Wpisz 11-cyfrowy PESEL',
+                'maxlength': '11',
+                'minlength': '11',
+            }),
+            'data_urodzenia': forms.DateInput(attrs={'type': 'date'}),
+            'przewidywana_data_porodu': forms.DateInput(attrs={'type': 'date'}),
+        }
+        labels = {
+            'pesel': 'Numer PESEL',
+            'data_urodzenia': 'Data urodzenia',
+            'przewidywana_data_porodu': 'Przewidywana data porodu',
+            'telefon': 'Numer telefonu',
+        }
+
+    # Walidacja PESEL – sprawdzamy czy ma 11 cyfr
+    def clean_pesel(self):
+        pesel = self.cleaned_data.get('pesel')
+        # isdigit() = sprawdź czy wszystkie znaki to cyfry
+        if not pesel.isdigit():
+            raise forms.ValidationError('PESEL może zawierać tylko cyfry!')
+        if len(pesel) != 11:
+            raise forms.ValidationError('PESEL musi mieć dokładnie 11 cyfr!')
+        return pesel
+
+
+# ================================================================
+# FORMULARZ – Dodawanie pacjentki przez lekarza po PESEL
+# ================================================================
+class FormularzDodajPacjentkePesel(forms.Form):
+    pesel = forms.CharField(
+        max_length=11,
+        min_length=11,
+        label='Numer PESEL pacjentki',
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Wpisz 11-cyfrowy PESEL',
+            'maxlength': '11',
+        })
+    )
+
+    def clean_pesel(self):
+        pesel = self.cleaned_data.get('pesel')
+        if not pesel.isdigit():
+            raise forms.ValidationError('PESEL może zawierać tylko cyfry!')
+        if len(pesel) != 11:
+            raise forms.ValidationError('PESEL musi mieć dokładnie 11 cyfr!')
+        return pesel

@@ -8,6 +8,12 @@ from .forms import (FormularzRejestracji, FormularzDanePacjentki,
                     FormularzRecepty, FormularzWizytyLekarza,
                     FormularzDaneLekarz) 
 from .decorators import tylko_pacjentka, tylko_lekarz
+from .models import Pacjentka, Pomiar, WizytaLekarska, Recepta, Lekarz, PacjentkaLekarza
+from .forms import (FormularzRejestracji, FormularzDanePacjentki,
+                    FormularzPomiaru, FormularzWizyty,
+                    FormularzRecepty, FormularzWizytyLekarza,
+                    FormularzDaneLekarz, FormularzDodajPacjentkePesel)
+
 
 def logowanie(request):
     if request.method == 'POST':
@@ -160,7 +166,45 @@ def pomiary(request):
 def panel_lekarza(request):
     if request.method == 'POST':
         akcja = request.POST.get('akcja')
-        if akcja == 'wypisz_recepte':
+
+        # Lekarz dodaje pacjentkę po PESEL
+        if akcja == 'dodaj_pacjentke':
+            f = FormularzDodajPacjentkePesel(request.POST)
+            if f.is_valid():
+                pesel = f.cleaned_data['pesel']
+                try:
+                    # Szukamy pacjentki z tym PESELem w bazie
+                    pacjentka = Pacjentka.objects.get(pesel=pesel)
+                    # get_or_create = dodaj relację jeśli nie istnieje
+                    _, utworzono = PacjentkaLekarza.objects.get_or_create(
+                        lekarz=request.user,
+                        pacjentka=pacjentka
+                    )
+                    if not utworzono:
+                        # Pacjentka już jest na liście
+                        komunikat = 'Ta pacjentka jest już na Twojej liście!'
+                    else:
+                        komunikat = f'Pacjentka {pacjentka} została dodana!'
+                except Pacjentka.DoesNotExist:
+                    # Nie znaleziono pacjentki z tym PESELem
+                    komunikat = 'Nie znaleziono pacjentki z tym numerem PESEL!'
+                    f.add_error('pesel', komunikat)
+
+                return render(request, 'monitor/panel_lekarza.html', {
+                    # Pokazujemy tylko pacjentki tego lekarza
+                    'pacjentki': PacjentkaLekarza.objects.filter(
+                        lekarz=request.user
+                    ),
+                    'f_dodaj_pacjentke': f,
+                    'f_recepta': FormularzRecepty(),
+                    'f_wizyta': FormularzWizytyLekarza(),
+                    'wszystkie_wizyty': WizytaLekarska.objects.filter(
+                        lekarz=request.user
+                    ).order_by('data_wizyty'),
+                    'komunikat': komunikat if 'komunikat' in dir() else None,
+                })
+
+        elif akcja == 'wypisz_recepte':
             f = FormularzRecepty(request.POST)
             if f.is_valid():
                 recepta = f.save(commit=False)
@@ -168,6 +212,7 @@ def panel_lekarza(request):
                 recepta.save()
                 f.save_m2m()
                 return redirect('panel_lekarza')
+
         elif akcja == 'umow_wizyte':
             f = FormularzWizytyLekarza(request.POST)
             if f.is_valid():
@@ -176,18 +221,31 @@ def panel_lekarza(request):
                 wizyta.save()
                 return redirect('panel_lekarza')
 
+    # GET – pobierz tylko pacjentki tego lekarza
+    moje_pacjentki = PacjentkaLekarza.objects.filter(lekarz=request.user)
+
     return render(request, 'monitor/panel_lekarza.html', {
-        'pacjentki': Pacjentka.objects.all(),
+        'pacjentki': moje_pacjentki,
+        'f_dodaj_pacjentke': FormularzDodajPacjentkePesel(),
         'f_recepta': FormularzRecepty(),
         'f_wizyta': FormularzWizytyLekarza(),
-        'wszystkie_wizyty': WizytaLekarska.objects.all().order_by('data_wizyty'),
+        'wszystkie_wizyty': WizytaLekarska.objects.filter(
+            lekarz=request.user
+        ).order_by('data_wizyty'),
     })
 
 
+
 # SZCZEGÓŁY PACJENTKI – dla lekarza
-@tylko_lekarz
 def szczegoly_pacjentki(request, pacjentka_id):
-    pacjentka = get_object_or_404(Pacjentka, id=pacjentka_id)
+    # Sprawdzamy że ta pacjentka należy do tego lekarza
+    relacja = get_object_or_404(
+        PacjentkaLekarza,
+        lekarz=request.user,
+        pacjentka__id=pacjentka_id
+    )
+    pacjentka = relacja.pacjentka
+
     return render(request, 'monitor/szczegoly_pacjentki.html', {
         'pacjentka': pacjentka,
         'pomiary': pacjentka.pomiary.all(),
