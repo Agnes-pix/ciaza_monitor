@@ -13,54 +13,135 @@
             <div class="card-body p-4">
 
                 {% if f_user.errors %}
-                    <div class="alert alert-danger">{{ f_user.errors }}</div>
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-circle me-1"></i>
+                        {{ f_user.errors }}
+                    </div>
                 {% endif %}
 
-                <form method="POST">
+                <form method="POST" id="formularz-rejestracji">
                     {% csrf_token %}
-                    <h5 class="mb-3">
-                        <i class="bi bi-key-fill me-2"></i>Dane konta
-                    </h5>
-                    {% for pole in f_user %}
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">{{ pole.label }}</label>
-                        {{ pole }}
-                        {% if pole.errors %}
-                            <div class="text-danger small">{{ pole.errors }}</div>
-                        {% endif %}
-                    </div>
-                    {% endfor %}
 
-                    <div id="dane-pacjentki">
-                        <h5 class="mb-3 mt-3">
-                            <i class="bi bi-clipboard2-heart me-2"></i>Dane medyczne
+                    <!-- KROK 1: Wybór roli – zawsze widoczny -->
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-person-badge me-1"></i>
+                            Rejestruję się jako
+                        </label>
+                        <div class="d-flex gap-3 mt-2">
+                            <!-- Przycisk wyboru PACJENTKA -->
+                            <div class="flex-fill">
+                                <input type="radio"
+                                       class="btn-check"
+                                       name="rola"
+                                       id="rola-pacjentka"
+                                       value="pacjentka"
+                                       autocomplete="off">
+                                <label class="btn btn-outline-danger w-100 py-3"
+                                       for="rola-pacjentka">
+                                    <i class="bi bi-heart-pulse d-block mb-1"
+                                       style="font-size:1.5rem"></i>
+                                    Jestem pacjentką
+                                </label>
+                            </div>
+                            <!-- Przycisk wyboru LEKARZ -->
+                            <div class="flex-fill">
+                                <input type="radio"
+                                       class="btn-check"
+                                       name="rola"
+                                       id="rola-lekarz"
+                                       value="lekarz"
+                                       autocomplete="off">
+                                <label class="btn btn-outline-primary w-100 py-3"
+                                       for="rola-lekarz">
+                                    <i class="bi bi-hospital d-block mb-1"
+                                       style="font-size:1.5rem"></i>
+                                    Jestem lekarzem
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- KROK 2: Dane konta – pojawia się po wyborze roli -->
+                    <div id="sekcja-dane-konta" style="display:none;">
+                        <hr>
+                        <h5 class="mb-3">
+                            <i class="bi bi-key-fill me-2 text-secondary"></i>
+                            Dane konta
+                        </h5>
+                        {% for pole in f_user %}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">
+                                {{ pole.label }}
+                            </label>
+                            {{ pole }}
+                            {% if pole.errors %}
+                                <div class="text-danger small mt-1">
+                                    <i class="bi bi-exclamation-circle me-1"></i>
+                                    {{ pole.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- KROK 3a: Dane pacjentki -->
+                    <div id="dane-pacjentki" style="display:none;">
+                        <hr>
+                        <h5 class="mb-3">
+                            <i class="bi bi-clipboard2-heart me-2 text-danger"></i>
+                            Dane medyczne
                         </h5>
                         {% for pole in f_dane_pacjentka %}
                         <div class="mb-3">
-                            <label class="form-label fw-semibold">{{ pole.label }}</label>
+                            <label class="form-label fw-semibold">
+                                {{ pole.label }}
+                            </label>
                             {{ pole }}
+                            {% if pole.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ pole.errors }}
+                                </div>
+                            {% endif %}
                         </div>
                         {% endfor %}
                     </div>
 
+                    <!-- KROK 3b: Dane lekarza -->
                     <div id="dane-lekarza" style="display:none;">
-                        <h5 class="mb-3 mt-3">
-                            <i class="bi bi-hospital me-2"></i>Dane lekarza
+                        <hr>
+                        <h5 class="mb-3">
+                            <i class="bi bi-hospital me-2 text-primary"></i>
+                            Dane lekarza
                         </h5>
                         {% for pole in f_dane_lekarz %}
                         <div class="mb-3">
-                            <label class="form-label fw-semibold">{{ pole.label }}</label>
+                            <label class="form-label fw-semibold">
+                                {{ pole.label }}
+                            </label>
                             {{ pole }}
+                            {% if pole.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ pole.errors }}
+                                </div>
+                            {% endif %}
                         </div>
                         {% endfor %}
                     </div>
 
-                    <button type="submit" class="btn btn-rozowy w-100 mt-3">
-                        <i class="bi bi-check-circle-fill me-2"></i>Zarejestruj się
-                    </button>
+                    <!-- Przycisk – pojawia się po wyborze roli -->
+                    <div id="przycisk-rejestracji" style="display:none;">
+                        <button type="submit" class="btn btn-rozowy w-100 mt-3 py-2">
+                            <i class="bi bi-check-circle-fill me-2"></i>
+                            Zarejestruj się
+                        </button>
+                    </div>
+
                 </form>
-                <p class="text-center mt-3">
-                    Masz konto? <a href="{% url 'login' %}">Zaloguj się</a>
+
+                <p class="text-center mt-3 mb-0">
+                    Masz konto?
+                    <a href="{% url 'login' %}" class="fw-bold">Zaloguj się</a>
                 </p>
             </div>
         </div>
@@ -68,9 +149,16 @@
 </div>
 
 <script>
-const polaPacjentki = document.querySelectorAll('#dane-pacjentki input');
-const polaLekarza = document.querySelectorAll('#dane-lekarza input');
+// Pobieramy wszystkie pola lekarza i pacjentki
+// żeby ustawiać required dynamicznie
+const polaPacjentki = document.querySelectorAll(
+    '#dane-pacjentki input, #dane-pacjentki select'
+);
+const polaLekarza = document.querySelectorAll(
+    '#dane-lekarza input, #dane-lekarza select'
+);
 
+// Funkcja ustawiająca pole jako wymagane lub nie
 function ustawWymagane(pola, czyWymagane) {
     pola.forEach(function(pole) {
         if (czyWymagane) {
@@ -81,21 +169,30 @@ function ustawWymagane(pola, czyWymagane) {
     });
 }
 
-ustawWymagane(polaPacjentki, true);
-ustawWymagane(polaLekarza, false);
-
+// Nasłuchujemy kliknięcia na przyciski radio
 document.querySelectorAll('input[name="rola"]').forEach(function(radio) {
     radio.addEventListener('change', function() {
-        if (this.value === 'lekarz') {
-            document.getElementById('dane-lekarza').style.display = 'block';
-            document.getElementById('dane-pacjentki').style.display = 'none';
-            ustawWymagane(polaLekarza, true);
-            ustawWymagane(polaPacjentki, false);
-        } else {
+
+        // Pokaż sekcję danych konta
+        document.getElementById('sekcja-dane-konta').style.display = 'block';
+        // Pokaż przycisk rejestracji
+        document.getElementById('przycisk-rejestracji').style.display = 'block';
+
+        if (this.value === 'pacjentka') {
+            // Pokaż dane pacjentki, ukryj dane lekarza
             document.getElementById('dane-pacjentki').style.display = 'block';
             document.getElementById('dane-lekarza').style.display = 'none';
+            // Ustaw wymagane pola
             ustawWymagane(polaPacjentki, true);
             ustawWymagane(polaLekarza, false);
+
+        } else if (this.value === 'lekarz') {
+            // Pokaż dane lekarza, ukryj dane pacjentki
+            document.getElementById('dane-lekarza').style.display = 'block';
+            document.getElementById('dane-pacjentki').style.display = 'none';
+            // Ustaw wymagane pola
+            ustawWymagane(polaLekarza, true);
+            ustawWymagane(polaPacjentki, false);
         }
     });
 });

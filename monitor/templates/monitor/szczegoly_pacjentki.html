@@ -1,37 +1,158 @@
 {% extends 'monitor/base.html' %}
 {% load static %}
-{% block title %}{{ pacjentka }}{% endblock %}
+{% block title %}{{ pacjentka }} – szczegóły{% endblock %}
 
 {% block content %}
-<a href="{% url 'panel_lekarza' %}" class="btn btn-outline-secondary mb-4">
-    <i class="bi bi-arrow-left me-1"></i>Powrót
-</a>
-<h3 class="fw-bold">{{ pacjentka }}</h3>
-<p class="text-muted">
-    Termin porodu: <strong>{{ pacjentka.przewidywana_data_porodu }}</strong>
-</p>
+<div class="d-flex align-items-center mb-4">
+    <a href="{% url 'panel_lekarza' %}" class="btn btn-outline-secondary me-3">
+        <i class="bi bi-arrow-left me-1"></i>Powrót
+    </a>
+    <div>
+        <h3 class="fw-bold mb-0">
+            <i class="bi bi-person-circle me-2 text-primary"></i>
+            {{ pacjentka }}
+        </h3>
+        <small class="text-muted">
+            PESEL: {{ pacjentka.pesel }} &nbsp;|&nbsp;
+            Termin porodu: <strong>{{ pacjentka.przewidywana_data_porodu }}</strong>
+        </small>
+    </div>
+</div>
 
-<div class="row mt-3">
-    <div class="col-md-6 mb-4">
+<div class="row">
+
+    <!-- LEWA KOLUMNA: Formularze -->
+    <div class="col-md-5">
+
+        <!-- Formularz recepty -->
+        <div class="card mb-4">
+            <div class="card-header bg-danger text-white fw-bold">
+                <i class="bi bi-capsule-pill me-2"></i>Wypisz receptę
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="akcja" value="wypisz_recepte">
+                    {% for pole in f_recepta %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">{{ pole.label }}</label>
+                        {{ pole }}
+                        {% if pole.errors %}
+                            <div class="text-danger small mt-1">{{ pole.errors }}</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                    <button type="submit" class="btn btn-danger w-100">
+                        <i class="bi bi-file-earmark-plus me-2"></i>Wypisz receptę
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Formularz wizyty -->
+        <div class="card mb-4">
+            <div class="card-header fw-bold" style="background-color:#fff3cd;">
+                <i class="bi bi-calendar-plus-fill me-2 text-warning"></i>
+                Umów wizytę
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="akcja" value="umow_wizyte">
+                    {% for pole in f_wizyta %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">{{ pole.label }}</label>
+                        {{ pole }}
+                    </div>
+                    {% endfor %}
+                    <button type="submit" class="btn btn-warning w-100">
+                        <i class="bi bi-calendar-check me-2"></i>Umów wizytę
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Lista recept -->
         <div class="card">
+            <div class="card-header bg-danger text-white fw-bold">
+                <i class="bi bi-prescription2 me-2"></i>Wypisane recepty
+            </div>
+            <ul class="list-group list-group-flush">
+                {% for r in recepty %}
+                <li class="list-group-item">
+                    <strong>{{ r.nazwa_leku }}</strong><br>
+                    <small class="text-muted">{{ r.dawkowanie }}</small>
+                    {% if r.uwagi %}
+                        <br><small class="text-muted fst-italic">{{ r.uwagi }}</small>
+                    {% endif %}
+                </li>
+                {% empty %}
+                <li class="list-group-item text-muted text-center py-3">
+                    Brak wypisanych recept
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+    </div>
+
+    <!-- PRAWA KOLUMNA: Dane i wykresy -->
+    <div class="col-md-7">
+
+        <!-- Wykres pomiarów -->
+        <div class="card mb-4">
             <div class="card-header fw-bold">
-                <i class="bi bi-activity me-2"></i>Pomiary
+                <i class="bi bi-graph-up me-2"></i>Wykres pomiarów
+                <div class="btn-group btn-group-sm float-end">
+                    <button class="btn btn-outline-danger btn-sm"
+                            onclick="pokazWykres('glukoza', this)">
+                        Glukoza
+                    </button>
+                    <button class="btn btn-outline-primary btn-sm"
+                            onclick="pokazWykres('cisnienie', this)">
+                        Ciśnienie
+                    </button>
+                    <button class="btn btn-outline-success btn-sm"
+                            onclick="pokazWykres('waga', this)">
+                        Waga
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <canvas id="wykres" height="120"></canvas>
+                <p id="brak-danych" class="text-muted text-center d-none">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Brak danych dla tego typu pomiaru
+                </p>
+            </div>
+        </div>
+
+        <!-- Historia pomiarów -->
+        <div class="card mb-4">
+            <div class="card-header fw-bold">
+                <i class="bi bi-table me-2"></i>Historia pomiarów
             </div>
             <div class="table-responsive">
-                <table class="table table-sm mb-0">
+                <table class="table table-hover table-sm mb-0">
                     <thead class="table-light">
-                        <tr><th>Rodzaj</th><th>Wartość</th><th>Data</th></tr>
+                        <tr>
+                            <th>Rodzaj</th>
+                            <th>Wartość</th>
+                            <th>Data</th>
+                            <th>Samopoczucie</th>
+                        </tr>
                     </thead>
                     <tbody>
                         {% for p in pomiary %}
                         <tr>
                             <td>{{ p.get_typ_display }}</td>
-                            <td>{{ p.wartosc }}</td>
+                            <td><strong>{{ p.wartosc }}</strong></td>
                             <td>{{ p.data_pomiaru|date:"d.m.Y H:i" }}</td>
+                            <td>{{ p.get_samopoczucie_display|default:"–" }}</td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="3" class="text-muted text-center">
+                            <td colspan="4" class="text-center text-muted py-3">
                                 Brak pomiarów
                             </td>
                         </tr>
@@ -40,26 +161,138 @@
                 </table>
             </div>
         </div>
-    </div>
 
-    <div class="col-md-6 mb-4">
+        <!-- Zaplanowane wizyty -->
         <div class="card">
-            <div class="card-header bg-danger text-white fw-bold">
-                <i class="bi bi-capsule-pill me-2"></i>Recepty
+            <div class="card-header fw-bold">
+                <i class="bi bi-calendar3 me-2"></i>Zaplanowane wizyty
             </div>
             <ul class="list-group list-group-flush">
-                {% for r in recepty %}
+                {% for w in wizyty %}
                 <li class="list-group-item">
-                    <strong>{{ r.nazwa_leku }}</strong><br>
-                    <small class="text-muted">{{ r.dawkowanie }}</small>
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <strong>{{ w.specjalizacja }}</strong><br>
+                            <small>
+                                <i class="bi bi-geo-alt me-1"></i>{{ w.miejsce }}
+                            </small><br>
+                            <small>
+                                <i class="bi bi-clock me-1"></i>
+                                {{ w.data_wizyty|date:"d.m.Y H:i" }}
+                            </small>
+                        </div>
+                        <span class="badge {% if w.odbyta %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                            {% if w.odbyta %}Odbyta{% else %}Zaplanowana{% endif %}
+                        </span>
+                    </div>
                 </li>
                 {% empty %}
-                <li class="list-group-item text-muted text-center">
-                    Brak recept
+                <li class="list-group-item text-muted text-center py-3">
+                    Brak zaplanowanych wizyt
                 </li>
                 {% endfor %}
             </ul>
         </div>
+
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const daneGlukoza = {
+    etykiety: {{ dane_glukoza.etykiety|safe }},
+    wartosci: {{ dane_glukoza.wartosci|safe }}
+};
+const daneCisnienie_s = {
+    etykiety: {{ dane_cisnienie_s.etykiety|safe }},
+    wartosci: {{ dane_cisnienie_s.wartosci|safe }}
+};
+const daneCisnienie_r = {
+    etykiety: {{ dane_cisnienie_r.etykiety|safe }},
+    wartosci: {{ dane_cisnienie_r.wartosci|safe }}
+};
+const daneWaga = {
+    etykiety: {{ dane_waga.etykiety|safe }},
+    wartosci: {{ dane_waga.wartosci|safe }}
+};
+
+let aktualnyWykres = null;
+
+function pokazWykres(typ, przycisk) {
+    if (aktualnyWykres) {
+        aktualnyWykres.destroy();
+    }
+
+    let dane, kolor, tytul;
+    if (typ === 'glukoza') {
+        dane = daneGlukoza;
+        kolor = '#e91e8c';
+        tytul = 'Glukoza (mg/dL)';
+    } else if (typ === 'cisnienie') {
+        dane = daneCisnienie_s;
+        kolor = '#1976D2';
+        tytul = 'Ciśnienie skurczowe (mmHg)';
+    } else {
+        dane = daneWaga;
+        kolor = '#4CAF50';
+        tytul = 'Waga (kg)';
+    }
+
+    const brakDanych = document.getElementById('brak-danych');
+
+    if (dane.etykiety.length === 0) {
+        brakDanych.classList.remove('d-none');
+        return;
+    }
+    brakDanych.classList.add('d-none');
+
+    const ctx = document.getElementById('wykres');
+
+    let datasets = [{
+        label: tytul,
+        data: dane.wartosci,
+        borderColor: kolor,
+        backgroundColor: kolor + '33',
+        tension: 0.3,
+        fill: true,
+        pointRadius: 5,
+        pointHoverRadius: 8,
+    }];
+
+    if (typ === 'cisnienie') {
+        datasets.push({
+            label: 'Ciśnienie rozkurczowe (mmHg)',
+            data: daneCisnienie_r.wartosci,
+            borderColor: '#FF9800',
+            backgroundColor: '#FF980033',
+            tension: 0.3,
+            fill: false,
+            pointRadius: 5,
+        });
+    }
+
+    aktualnyWykres = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: dane.etykiety,
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'top' },
+                tooltip: { mode: 'index' }
+            },
+            scales: {
+                y: { beginAtZero: false }
+            }
+        }
+    });
+}
+
+// Pokaż wykres glukozy domyślnie
+pokazWykres('glukoza',
+    document.querySelector('button[onclick*="glukoza"]'));
+</script>
 {% endblock %}

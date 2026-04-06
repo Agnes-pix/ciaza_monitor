@@ -56,15 +56,47 @@ class FormularzDanePacjentki(forms.ModelForm):
 class FormularzDaneLekarz(forms.ModelForm):
     class Meta:
         model = Lekarz
-        fields = ['imie', 'nazwisko', 'miejsce_pracy',
-                  'specjalizacja', 'telefon']
+        fields = ['pwz', 'miejsce_pracy', 'specjalizacja', 'telefon']
+        widgets = {
+            'pwz': forms.TextInput(attrs={
+                'placeholder': 'Wpisz 7-cyfrowy numer PWZ',
+                'maxlength': '7',
+                'minlength': '7',
+            }),
+            
+            'miejsce_pracy': forms.TextInput(attrs={
+                'placeholder': 'np. Szpital Miejski nr 5'
+            }),
+            'specjalizacja': forms.TextInput(attrs={
+                'placeholder': 'np. Ginekolog'
+            }),
+            'telefon': forms.TextInput(attrs={
+                'placeholder': 'np. 500 600 700'
+            }),
+        }
         labels = {
-            'imie': 'Imię',
-            'nazwisko': 'Nazwisko',
+            'pwz': 'Numer PWZ',
+            
             'miejsce_pracy': 'Miejsce pracy',
             'specjalizacja': 'Specjalizacja',
             'telefon': 'Telefon',
         }
+
+    # Walidacja PWZ
+    def clean_pwz(self):
+        pwz = self.cleaned_data.get('pwz')
+        if not pwz:
+            raise forms.ValidationError('Numer PWZ jest wymagany!')
+        # isdigit() = sprawdź czy wszystkie znaki to cyfry
+        if not pwz.isdigit():
+            raise forms.ValidationError('PWZ może zawierać tylko cyfry!')
+        if len(pwz) != 7:
+            raise forms.ValidationError('PWZ musi mieć dokładnie 7 cyfr!')
+        # PWZ nie może zaczynać się od 0
+        if pwz[0] == '0':
+            raise forms.ValidationError('PWZ nie może zaczynać się od 0!')
+        return pwz
+    
 
 class FormularzPomiaru(forms.ModelForm):
     class Meta:

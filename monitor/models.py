@@ -129,6 +129,12 @@ class Lekarz(models.Model):
     miejsce_pracy = models.CharField(max_length=200)
     specjalizacja = models.CharField(max_length=100, blank=True)
     telefon = models.CharField(max_length=20, blank=True)
+    pwz = models.CharField(
+        max_length=7,
+        unique=True,       # każdy numer PWZ unikalny
+        blank=True,
+        null=True
+    )
 
     def __str__(self):
         return f"Dr {self.imie} {self.nazwisko}"

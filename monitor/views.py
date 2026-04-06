@@ -237,8 +237,8 @@ def panel_lekarza(request):
 
 
 # SZCZEGÓŁY PACJENTKI – dla lekarza
+@tylko_lekarz
 def szczegoly_pacjentki(request, pacjentka_id):
-    # Sprawdzamy że ta pacjentka należy do tego lekarza
     relacja = get_object_or_404(
         PacjentkaLekarza,
         lekarz=request.user,
@@ -246,9 +246,53 @@ def szczegoly_pacjentki(request, pacjentka_id):
     )
     pacjentka = relacja.pacjentka
 
+    if request.method == 'POST':
+        akcja = request.POST.get('akcja')
+
+        if akcja == 'wypisz_recepte':
+            f = FormularzRecepty(request.POST)
+            if f.is_valid():
+                recepta = f.save(commit=False)
+                recepta.lekarz = request.user
+                recepta.save()
+                f.save_m2m()
+                return redirect('szczegoly_pacjentki', pacjentka_id=pacjentka_id)
+
+        elif akcja == 'umow_wizyte':
+            f = FormularzWizytyLekarza(request.POST)
+            if f.is_valid():
+                wizyta = f.save(commit=False)
+                wizyta.lekarz = request.user
+                wizyta.pacjentka = pacjentka
+                wizyta.save()
+                return redirect('szczegoly_pacjentki', pacjentka_id=pacjentka_id)
+
+    # Dane do wykresów – tak samo jak u pacjentki
+    def pobierz_dane(typ):
+        rekordy = Pomiar.objects.filter(
+            pacjentka=pacjentka,
+            typ=typ
+        ).order_by('data_pomiaru').values_list('data_pomiaru', 'wartosc')
+        return {
+            'etykiety': [r[0].strftime('%d.%m %H:%M') for r in rekordy],
+            'wartosci': [r[1] for r in rekordy],
+        }
+
+    # Formularze z pacjentką już wypełnioną
+    f_recepta = FormularzRecepty()
+    f_wizyta = FormularzWizytyLekarza(
+        initial={'pacjentka': pacjentka}
+    )
+
     return render(request, 'monitor/szczegoly_pacjentki.html', {
         'pacjentka': pacjentka,
         'pomiary': pacjentka.pomiary.all(),
         'wizyty': pacjentka.wizyty.all(),
         'recepty': pacjentka.recepty.all(),
+        'f_recepta': f_recepta,
+        'f_wizyta': f_wizyta,
+        'dane_glukoza': pobierz_dane('glukoza'),
+        'dane_cisnienie_s': pobierz_dane('cisnienie_s'),
+        'dane_cisnienie_r': pobierz_dane('cisnienie_r'),
+        'dane_waga': pobierz_dane('waga'),
     })
