@@ -4,12 +4,15 @@
 
 {% block content %}
 <h3 class="fw-bold mb-4">
-    <i class="bi bi-clipboard2-pulse-fill me-2 text-primary"></i>Moje dane zdrowotne
+    <i class="bi bi-clipboard2-pulse-fill me-2 text-primary"></i>
+    Moje dane zdrowotne
 </h3>
 
 <div class="row">
+
+    <!-- LEWA KOLUMNA: Formularz dodawania pomiaru -->
     <div class="col-md-5">
-        <div class="card mb-4">
+        <div class="card">
             <div class="card-header bg-primary text-white fw-bold">
                 <i class="bi bi-plus-circle-fill me-2"></i>Dodaj pomiar
             </div>
@@ -21,6 +24,12 @@
                     <div class="mb-3">
                         <label class="form-label fw-semibold">{{ pole.label }}</label>
                         {{ pole }}
+                        {% if pole.errors %}
+                            <div class="text-danger small mt-1">
+                                <i class="bi bi-exclamation-circle me-1"></i>
+                                {{ pole.errors }}
+                            </div>
+                        {% endif %}
                     </div>
                     {% endfor %}
                     <button type="submit" class="btn btn-primary w-100">
@@ -29,64 +38,41 @@
                 </form>
             </div>
         </div>
+    </div>
 
-        <div class="card">
-            <div class="card-header fw-bold" style="background-color:#fff3cd;">
-                <i class="bi bi-calendar-plus-fill me-2 text-warning"></i>Dodaj wizytę
+    <!-- PRAWA KOLUMNA: Wykres i historia -->
+    <div class="col-md-7">
+
+        <!-- Wykres -->
+        <div class="card mb-4">
+            <div class="card-header fw-bold">
+                <i class="bi bi-graph-up me-2"></i>Wykres pomiarów
+                <div class="btn-group btn-group-sm float-end">
+                    <button class="btn btn-outline-danger btn-sm"
+                            onclick="pokazWykres('glukoza', this)">
+                        Glukoza
+                    </button>
+                    <button class="btn btn-outline-primary btn-sm"
+                            onclick="pokazWykres('cisnienie', this)">
+                        Ciśnienie
+                    </button>
+                    <button class="btn btn-outline-success btn-sm"
+                            onclick="pokazWykres('waga', this)">
+                        Waga
+                    </button>
+                </div>
             </div>
             <div class="card-body">
-                <form method="POST">
-                    {% csrf_token %}
-                    <input type="hidden" name="akcja" value="dodaj_wizyte">
-                    {% for pole in f_wizyta %}
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">{{ pole.label }}</label>
-                        {{ pole }}
-                    </div>
-                    {% endfor %}
-                    <button type="submit" class="btn btn-warning w-100">
-                        <i class="bi bi-calendar-check-fill me-2"></i>Zapisz wizytę
-                    </button>
-                </form>
+                <canvas id="wykres" height="120"></canvas>
+                <p id="brak-danych" class="text-muted text-center d-none">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Brak danych dla tego typu pomiaru
+                </p>
             </div>
         </div>
-    </div>
 
-
-
-
-
-    <div class="col-md-7">
-        <!-- WYKRES – Element dynamiczny nr 3 -->
-<div class="card mb-4">
-    <div class="card-header fw-bold">
-        <i class="bi bi-graph-up me-2"></i>Wykres pomiarów
-        <!-- Przyciski wyboru typu wykresu -->
-        <div class="btn-group btn-group-sm float-end">
-            <button class="btn btn-outline-danger btn-sm"
-                    onclick="pokazWykres('glukoza', this)">
-                Glukoza
-            </button>
-            <button class="btn btn-outline-primary btn-sm"
-                    onclick="pokazWykres('cisnienie', this)">
-                Ciśnienie
-            </button>
-            <button class="btn btn-outline-success btn-sm"
-                    onclick="pokazWykres('waga', this)">
-                Waga
-            </button>
-        </div>
-    </div>
-    <div class="card-body">
-        <!-- canvas = miejsce gdzie Chart.js narysuje wykres -->
-        <canvas id="wykres" height="120"></canvas>
-        <p id="brak-danych" class="text-muted text-center d-none">
-            <i class="bi bi-info-circle me-1"></i>
-            Brak danych dla tego typu pomiaru
-        </p>
-    </div>
-</div>
-        <div class="card mb-4">
+        <!-- Historia pomiarów -->
+        <div class="card">
             <div class="card-header fw-bold">
                 <i class="bi bi-table me-2"></i>Historia pomiarów
             </div>
@@ -94,8 +80,10 @@
                 <table class="table table-hover mb-0 table-sm">
                     <thead class="table-light">
                         <tr>
-                            <th>Rodzaj</th><th>Wartość</th>
-                            <th>Data</th><th>Samopoczucie</th>
+                            <th>Rodzaj</th>
+                            <th>Wartość</th>
+                            <th>Data</th>
+                            <th>Samopoczucie</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -109,7 +97,7 @@
                         {% empty %}
                         <tr>
                             <td colspan="4" class="text-center text-muted py-3">
-                                Brak pomiarów
+                                <i class="bi bi-inbox me-1"></i>Brak pomiarów
                             </td>
                         </tr>
                         {% endfor %}
@@ -118,45 +106,12 @@
             </div>
         </div>
 
-        <div class="card">
-            <div class="card-header fw-bold">
-                <i class="bi bi-calendar3 me-2"></i>Zaplanowane wizyty
-            </div>
-            <ul class="list-group list-group-flush">
-                {% for w in historia_wizyt %}
-                <li class="list-group-item">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <strong>{{ w.specjalizacja }}</strong><br>
-                            <small>
-                                <i class="bi bi-geo-alt me-1"></i>{{ w.miejsce }}
-                            </small><br>
-                            <small>
-                                <i class="bi bi-clock me-1"></i>
-                                {{ w.data_wizyty|date:"d.m.Y H:i" }}
-                            </small>
-                        </div>
-                        <span class="badge {% if w.odbyta %}bg-success{% else %}bg-warning text-dark{% endif %}">
-                            {% if w.odbyta %}Odbyta{% else %}Zaplanowana{% endif %}
-                        </span>
-                    </div>
-                </li>
-                {% empty %}
-                <li class="list-group-item text-muted text-center py-3">
-                    Brak wizyt
-                </li>
-                {% endfor %}
-            </ul>
-        </div>
     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-// Dane z Django przekazane do JavaScript
-// {{ zmienna|safe }} = wyświetl bez escapowania znaków HTML
-// Dzięki temu Python dict staje się JavaScript object
 const daneGlukoza = {
     etykiety: {{ dane_glukoza.etykiety|safe }},
     wartosci: {{ dane_glukoza.wartosci|safe }}
@@ -174,61 +129,41 @@ const daneWaga = {
     wartosci: {{ dane_waga.wartosci|safe }}
 };
 
-// Tworzymy wykres – Chart.js robi wszystko za nas!
-// new Chart(element, konfiguracja)
 let aktualnyWykres = null;
 
 function pokazWykres(typ, przycisk) {
-    // Zniszcz poprzedni wykres żeby nie nakładał się na nowy
-    if (aktualnyWykres) {
-        aktualnyWykres.destroy();
-    }
+    if (aktualnyWykres) aktualnyWykres.destroy();
 
-    // Wybierz dane w zależności od przycisku
     let dane, kolor, tytul;
     if (typ === 'glukoza') {
-        dane = daneGlukoza;
-        kolor = '#e91e8c';
-        tytul = 'Glukoza (mg/dL)';
+        dane = daneGlukoza; kolor = '#e91e8c'; tytul = 'Glukoza (mg/dL)';
     } else if (typ === 'cisnienie') {
-        // Ciśnienie ma dwie linie na jednym wykresie!
-        dane = daneCisnienie_s;
-        kolor = '#1976D2';
-        tytul = 'Ciśnienie (mmHg)';
+        dane = daneCisnienie_s; kolor = '#1976D2'; tytul = 'Ciśnienie (mmHg)';
     } else {
-        dane = daneWaga;
-        kolor = '#4CAF50';
-        tytul = 'Waga (kg)';
+        dane = daneWaga; kolor = '#4CAF50'; tytul = 'Waga (kg)';
     }
 
     const brakDanych = document.getElementById('brak-danych');
-
-    // Jeśli brak danych – pokaż komunikat
     if (dane.etykiety.length === 0) {
         brakDanych.classList.remove('d-none');
         return;
     }
     brakDanych.classList.add('d-none');
 
-    // Pobieramy element canvas
-    const ctx = document.getElementById('wykres');
-
-    // Zestawy danych dla wykresu
     let datasets = [{
         label: tytul,
         data: dane.wartosci,
         borderColor: kolor,
-        backgroundColor: kolor + '33', // 33 = 20% przezroczystości
-        tension: 0.3,  // zaokrąglenie linii
-        fill: true,    // wypełnienie pod linią
+        backgroundColor: kolor + '33',
+        tension: 0.3,
+        fill: true,
         pointRadius: 5,
         pointHoverRadius: 8,
     }];
 
-    // Dla ciśnienia dodajemy drugą linię (rozkurczowe)
     if (typ === 'cisnienie') {
         datasets.push({
-            label: 'Ciśnienie rozkurczowe (mmHg)',
+            label: 'Ciśnienie rozkurczowe',
             data: daneCisnienie_r.wartosci,
             borderColor: '#FF9800',
             backgroundColor: '#FF980033',
@@ -238,27 +173,17 @@ function pokazWykres(typ, przycisk) {
         });
     }
 
-    // Tworzymy wykres przez Chart.js
-    aktualnyWykres = new Chart(ctx, {
-        type: 'line',  // typ wykresu = liniowy
-        data: {
-            labels: dane.etykiety,  // etykiety osi X (daty)
-            datasets: datasets       // dane do wykresu
-        },
+    aktualnyWykres = new Chart(document.getElementById('wykres'), {
+        type: 'line',
+        data: { labels: dane.etykiety, datasets: datasets },
         options: {
             responsive: true,
-            plugins: {
-                legend: { position: 'top' },
-                tooltip: { mode: 'index' }
-            },
-            scales: {
-                y: { beginAtZero: false }
-            }
+            plugins: { legend: { position: 'top' } },
+            scales: { y: { beginAtZero: false } }
         }
     });
 }
 
-// Pokaż wykres glukozy domyślnie przy załadowaniu strony
 pokazWykres('glukoza',
     document.querySelector('button[onclick*="glukoza"]'));
 </script>

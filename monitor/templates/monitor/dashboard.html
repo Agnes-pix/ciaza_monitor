@@ -9,16 +9,16 @@
 </h2>
 
 <div class="row">
-    <!-- Odliczanie -->
+
+    <!-- Odliczanie do porodu -->
     <div class="col-md-4 mb-4">
         <div class="card text-center h-100">
-            <div class="card-body p-4">
-                <i class="bi bi-calendar-heart text-danger mb-2" style="font-size:2.5rem;"></i>
+            <div class="card-body p-4 d-flex flex-column justify-content-center">
+                <i class="bi bi-calendar-heart text-danger mb-2"
+                   style="font-size:2.5rem;"></i>
                 <p class="text-muted mb-1 fw-semibold">Do porodu pozostało</p>
-                <div style="font-size:4rem; font-weight:900; color:#e91e8c;">
-                    {{ dni_do_porodu }}
-                </div>
-                <p class="text-muted">dni</p>
+                <div class="licznik-porodu">{{ dni_do_porodu }}</div>
+                <p class="text-muted mt-1">dni</p>
                 <span class="badge bg-light text-dark border">
                     <i class="bi bi-calendar3 me-1"></i>
                     {{ pacjentka.przewidywana_data_porodu }}
@@ -27,40 +27,7 @@
         </div>
     </div>
 
-    <!-- Wizyty -->
-    <div class="col-md-4 mb-4">
-        <div class="card h-100">
-            <div class="card-header fw-bold" style="background-color:#fff3cd;">
-                <i class="bi bi-calendar-check-fill me-2 text-warning"></i>
-                Nadchodzące wizyty
-            </div>
-            <ul class="list-group list-group-flush">
-                {% for wizyta in nadchodzace_wizyty %}
-                <li class="list-group-item">
-                    <strong>{{ wizyta.specjalizacja }}</strong><br>
-                    <small>
-                        <i class="bi bi-clock me-1"></i>
-                        {{ wizyta.data_wizyty|date:"d.m.Y H:i" }}
-                    </small><br>
-                    <small class="text-muted">
-                        <i class="bi bi-geo-alt me-1"></i>{{ wizyta.miejsce }}
-                    </small>
-                </li>
-                {% empty %}
-                <li class="list-group-item text-muted text-center py-3">
-                    Brak zaplanowanych wizyt
-                </li>
-                {% endfor %}
-            </ul>
-            <div class="card-footer bg-white">
-                <a href="{% url 'pomiary' %}" class="btn btn-sm btn-outline-warning w-100">
-                    <i class="bi bi-plus-circle me-1"></i>Dodaj wizytę
-                </a>
-            </div>
-        </div>
-    </div>
-
-    <!-- Recepty -->
+    <!-- Recepty do realizacji -->
     <div class="col-md-4 mb-4">
         <div class="card h-100">
             <div class="card-header bg-danger text-white fw-bold">
@@ -71,53 +38,95 @@
                 <li class="list-group-item">
                     <strong>{{ recepta.nazwa_leku }}</strong><br>
                     <small class="text-muted">{{ recepta.dawkowanie }}</small>
+                    {% if recepta.uwagi %}
+                        <br><small class="text-muted fst-italic">
+                            {{ recepta.uwagi }}
+                        </small>
+                    {% endif %}
                 </li>
                 {% empty %}
-                <li class="list-group-item text-muted text-center py-3">
-                    Brak recept
+                <li class="list-group-item text-muted text-center py-4">
+                    <i class="bi bi-check-circle text-success d-block mb-2"
+                       style="font-size:1.5rem"></i>
+                    Brak recept do realizacji
                 </li>
                 {% endfor %}
             </ul>
         </div>
     </div>
+
+    <!-- Ostatnie pomiary -->
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header fw-bold">
+                <i class="bi bi-activity me-2"></i>Ostatnie pomiary
+            </div>
+            <ul class="list-group list-group-flush">
+                {% for p in ostatnie_pomiary %}
+                <li class="list-group-item">
+                    <div class="d-flex justify-content-between">
+                        <span>{{ p.get_typ_display }}</span>
+                        <strong class="text-primary">{{ p.wartosc }}</strong>
+                    </div>
+                    <small class="text-muted">
+                        {{ p.data_pomiaru|date:"d.m.Y H:i" }}
+                    </small>
+                </li>
+                {% empty %}
+                <li class="list-group-item text-muted text-center py-4">
+                    <i class="bi bi-inbox d-block mb-2" style="font-size:1.5rem"></i>
+                    Brak pomiarów
+                </li>
+                {% endfor %}
+            </ul>
+            <div class="card-footer bg-white">
+                <a href="{% url 'pomiary' %}" class="btn btn-sm btn-outline-primary w-100">
+                    <i class="bi bi-arrow-right me-1"></i>Zobacz wszystkie
+                </a>
+            </div>
+        </div>
+    </div>
+
 </div>
 
-<!-- Ostatnie pomiary -->
-<div class="card">
+<!-- Zaplanowane wizyty przez lekarza -->
+<div class="card mt-2">
     <div class="card-header fw-bold">
-        <i class="bi bi-activity me-2"></i>Ostatnie pomiary
+        <i class="bi bi-calendar-check-fill me-2 text-warning"></i>
+        Zaplanowane wizyty
     </div>
-    <div class="table-responsive">
-        <table class="table table-hover mb-0">
-            <thead class="table-light">
-                <tr>
-                    <th>Rodzaj</th><th>Wartość</th>
-                    <th>Data</th><th>Samopoczucie</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for p in ostatnie_pomiary %}
-                <tr>
-                    <td>{{ p.get_typ_display }}</td>
-                    <td><strong>{{ p.wartosc }}</strong></td>
-                    <td>{{ p.data_pomiaru|date:"d.m.Y H:i" }}</td>
-                    <td>{{ p.get_samopoczucie_display|default:"–" }}</td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="4" class="text-center text-muted py-3">
-                        Brak pomiarów.
-                        <a href="{% url 'pomiary' %}">Dodaj pierwszy</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    <div class="card-footer bg-white">
-        <a href="{% url 'pomiary' %}" class="btn btn-sm btn-outline-primary">
-            <i class="bi bi-arrow-right me-1"></i>Zobacz wszystkie
-        </a>
-    </div>
+    <ul class="list-group list-group-flush">
+        {% for wizyta in wizyty %}
+        <li class="list-group-item">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <strong>{{ wizyta.specjalizacja }}</strong><br>
+                    <small>
+                        <i class="bi bi-geo-alt me-1"></i>{{ wizyta.miejsce }}
+                    </small><br>
+                    <small>
+                        <i class="bi bi-clock me-1"></i>
+                        {{ wizyta.data_wizyty|date:"d.m.Y H:i" }}
+                    </small>
+                    {% if wizyta.notatki %}
+                        <br><small class="text-muted fst-italic">
+                            {{ wizyta.notatki }}
+                        </small>
+                    {% endif %}
+                </div>
+                <span class="badge {% if wizyta.odbyta %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                    <i class="bi {% if wizyta.odbyta %}bi-check-circle-fill{% else %}bi-hourglass-split{% endif %} me-1"></i>
+                    {% if wizyta.odbyta %}Odbyta{% else %}Zaplanowana{% endif %}
+                </span>
+            </div>
+        </li>
+        {% empty %}
+        <li class="list-group-item text-muted text-center py-4">
+            <i class="bi bi-calendar-x d-block mb-2" style="font-size:1.5rem"></i>
+            Brak zaplanowanych wizyt
+        </li>
+        {% endfor %}
+    </ul>
 </div>
+
 {% endblock %}

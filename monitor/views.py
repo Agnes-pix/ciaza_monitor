@@ -96,11 +96,10 @@ def dashboard(request):
     dzisiaj = timezone.now().date()
     dni_do_porodu = (pacjentka.przewidywana_data_porodu - dzisiaj).days
 
-    nadchodzace_wizyty = WizytaLekarska.objects.filter(
-        pacjentka=pacjentka,
-        data_wizyty__gte=timezone.now(),
-        odbyta=False
-    )[:5]
+    # Pobierz wszystkie wizyty umawianie przez lekarza
+    wizyty = WizytaLekarska.objects.filter(
+        pacjentka=pacjentka
+    ).order_by('data_wizyty')
 
     recepty = pacjentka.recepty.filter(do_zrealizowania=True)
     ostatnie_pomiary = pacjentka.pomiary.all()[:3]
@@ -108,7 +107,7 @@ def dashboard(request):
     return render(request, 'monitor/dashboard.html', {
         'pacjentka': pacjentka,
         'dni_do_porodu': dni_do_porodu,
-        'nadchodzace_wizyty': nadchodzace_wizyty,
+        'wizyty': wizyty,
         'recepty': recepty,
         'ostatnie_pomiary': ostatnie_pomiary,
     })
@@ -128,38 +127,28 @@ def pomiary(request):
                 pomiar.pacjentka = pacjentka
                 pomiar.save()
                 return redirect('pomiary')
-        elif akcja == 'dodaj_wizyte':
-            f = FormularzWizyty(request.POST)
-            if f.is_valid():
-                wizyta = f.save(commit=False)
-                wizyta.pacjentka = pacjentka
-                wizyta.save()
-                return redirect('pomiary')
 
-    # Pobieramy dane do wykresu z bazy
-    # values_list = pobierz tylko te dwa pola zamiast całych obiektów
     def pobierz_dane(typ):
         rekordy = Pomiar.objects.filter(
             pacjentka=pacjentka,
             typ=typ
         ).order_by('data_pomiaru').values_list('data_pomiaru', 'wartosc')
+        
         return {
-            # Formatujemy daty na stringi bo JS nie rozumie dat Pythona
             'etykiety': [r[0].strftime('%d.%m %H:%M') for r in rekordy],
             'wartosci': [r[1] for r in rekordy],
         }
 
     return render(request, 'monitor/pomiary.html', {
         'f_pomiar': FormularzPomiaru(),
-        'f_wizyta': FormularzWizyty(),
         'historia_pomiarow': pacjentka.pomiary.all(),
-        'historia_wizyt': pacjentka.wizyty.all(),
-        # Dane do wykresu
         'dane_glukoza': pobierz_dane('glukoza'),
         'dane_cisnienie_s': pobierz_dane('cisnienie_s'),
         'dane_cisnienie_r': pobierz_dane('cisnienie_r'),
         'dane_waga': pobierz_dane('waga'),
     })
+
+
 
 # PANEL LEKARZA
 @tylko_lekarz
