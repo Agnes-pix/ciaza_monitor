@@ -7,7 +7,7 @@ from .models import Pacjentka, Pomiar, WizytaLekarska, Recepta, Lekarz, Pacjentk
 from .forms import (FormularzRejestracji, FormularzDanePacjentki,
                     FormularzPomiaru, FormularzWizyty,
                     FormularzRecepty, FormularzWizytyLekarza,
-                    FormularzDaneLekarz, FormularzDodajPacjentkePesel, FormularzSamopoczucia)
+                    FormularzDaneLekarz, FormularzDodajPacjentkePesel, FormularzSamopoczucia, FormularzReceptyDlaPacjentki)
 
 
 def logowanie(request):
@@ -300,13 +300,16 @@ def szczegoly_pacjentki(request, pacjentka_id):
         akcja = request.POST.get('akcja')
 
         if akcja == 'wypisz_recepte':
-            f = FormularzRecepty(request.POST)
+            f = FormularzReceptyDlaPacjentki(request.POST)
             if f.is_valid():
                 recepta = f.save(commit=False)
                 recepta.lekarz = request.user
                 recepta.save()
                 f.save_m2m()
-                return redirect('szczegoly_pacjentki', pacjentka_id=pacjentka_id)
+                recepta.pacjentki.add(pacjentka)
+                return redirect('szczegoly_pacjentki',
+                                pacjentka_id=pacjentka_id)
+               
 
         elif akcja == 'umow_wizyte':
             f = FormularzWizytyLekarza(request.POST)
@@ -329,7 +332,7 @@ def szczegoly_pacjentki(request, pacjentka_id):
         }
 
     # Formularze z pacjentką już wypełnioną
-    f_recepta = FormularzRecepty()
+    f_recepta = FormularzReceptyDlaPacjentki()
     f_wizyta = FormularzWizytyLekarza(
         initial={'pacjentka': pacjentka}
     )

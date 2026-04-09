@@ -298,3 +298,17 @@ class FormularzSamopoczucia(forms.ModelForm):
             'notatka': 'Notatka (opcjonalnie)',
             'data_pomiaru': 'Data i godzina',
         }   
+
+class FormularzReceptyDlaPacjentki(forms.ModelForm):
+    """Formularz recepty bez wyboru pacjentki – używany w szczegółach"""
+    class Meta:
+        model = Recepta
+        fields = ['nazwa_leku', 'dawkowanie', 'uwagi']
+        widgets = {
+            'uwagi': forms.Textarea(attrs={'rows': 3}),
+        }
+        labels = {
+            'nazwa_leku': 'Nazwa leku',
+            'dawkowanie': 'Ilość opakowań',
+            'uwagi': 'Uwagi dla pacjentki',
+        }

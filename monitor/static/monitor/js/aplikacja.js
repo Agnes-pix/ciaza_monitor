@@ -7,6 +7,7 @@
 // ============================================================
 
 
+
 // document.addEventListener('DOMContentLoaded', funkcja) =
 // Uruchom cały kod dopiero gdy strona HTML jest w pełni załadowana
 // Bez tego JavaScript mógłby szukać elementów które jeszcze nie istnieją
