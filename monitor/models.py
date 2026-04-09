@@ -26,9 +26,9 @@ class Pacjentka(models.Model):
 class Pomiar(models.Model):
     TYPY_POMIAROW = [
         ('glukoza', 'Poziom glukozy (mg/dL)'),
-        ('cisnienie_s', 'Ciśnienie skurczowe (mmHg)'),
-        ('cisnienie_r', 'Ciśnienie rozkurczowe (mmHg)'),
-        ('waga', 'Waga (kg)'),
+        ('cisnienie', 'Ciśnienie krwi (mmHg)'),  # ← zmieniona etykieta
+        # ('cisnienie_r', 'Ciśnienie rozkurczowe (mmHg)'),  # zostaje w bazie
+        
         ('tetno', 'Tętno (uderzenia/min)'),
     ]
     SAMOPOCZUCIE_WYBORY = [

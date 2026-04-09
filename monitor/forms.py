@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
-from .models import Pacjentka, Pomiar, WizytaLekarska, Recepta, Lekarz
+
 from .models import Pacjentka, Pomiar, WizytaLekarska, Recepta, Lekarz, PacjentkaLekarza
 
 class FormularzRejestracji(UserCreationForm):
@@ -99,22 +99,68 @@ class FormularzDaneLekarz(forms.ModelForm):
     
 
 class FormularzPomiaru(forms.ModelForm):
+    cisnienie = forms.CharField(
+    required=False,
+    label='Ciśnienie krwi',
+    widget=forms.TextInput(attrs={
+        'class': 'form-control',
+        'placeholder': 'np. 120/80',
+        'id': 'id_cisnienie'
+    })
+    )
+        
     class Meta:
         model = Pomiar
-        fields = ['typ', 'wartosc', 'data_pomiaru', 'samopoczucie', 'notatka']
+        fields = ['typ', 'wartosc', 'data_pomiaru' ]
         widgets = {
-            'data_pomiaru': forms.DateTimeInput(
-                attrs={'type': 'datetime-local'}
-            ),
-            'notatka': forms.Textarea(attrs={'rows': 3}),
+            'typ': forms.Select(attrs={
+                'class': 'form-select',
+                'id': 'id_typ'
+            }),
+            'wartosc': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.1',
+                'placeholder': 'np. 95.0',
+                'id': 'id_wartosc'
+            }),
+            'data_pomiaru': forms.DateTimeInput(attrs={
+                'class': 'form-control',
+                'type': 'datetime-local'
+            }),
         }
         labels = {
             'typ': 'Rodzaj pomiaru',
             'wartosc': 'Wartość',
             'data_pomiaru': 'Data i godzina pomiaru',
-            'samopoczucie': 'Jak się czujesz?',
-            'notatka': 'Notatka (opcjonalnie)',
+            
         }
+
+    def clean(self):
+        # clean() = walidacja całego formularza (nie jednego pola)
+        cleaned_data = super().clean()
+        typ = cleaned_data.get('typ')
+        cisnienie = cleaned_data.get('cisnienie')
+
+        if typ == 'cisnienie':
+            # Gdy wybrano ciśnienie – pole cisnienie jest wymagane
+            if not cisnienie:
+                raise forms.ValidationError(
+                    'Wpisz ciśnienie w formacie 120/80!'
+                )
+            # Sprawdzamy czy format jest poprawny
+            if '/' not in cisnienie:
+                raise forms.ValidationError(
+                    'Podaj ciśnienie w formacie 120/80 (skurczowe/rozkurczowe)!'
+                )
+            try:
+                czesci = cisnienie.split('/')
+                int(czesci[0].strip())  # skurczowe
+                int(czesci[1].strip())  # rozkurczowe
+            except (ValueError, IndexError):
+                raise forms.ValidationError(
+                    'Nieprawidłowy format! Użyj np. 120/80'
+                )
+        return cleaned_data
 
 
 class FormularzWizyty(forms.ModelForm):
@@ -146,7 +192,7 @@ class FormularzRecepty(forms.ModelForm):
         labels = {
             'pacjentki': 'Wybierz pacjentkę',
             'nazwa_leku': 'Nazwa leku',
-            'dawkowanie': 'Dawkowanie',
+            'dawkowanie': 'Ilość opakowań',
             'uwagi': 'Uwagi dla pacjentki',
         }
 
@@ -223,3 +269,32 @@ class FormularzDodajPacjentkePesel(forms.Form):
         if len(pesel) != 11:
             raise forms.ValidationError('PESEL musi mieć dokładnie 11 cyfr!')
         return pesel
+    
+ # ================================================================
+# FORMULARZ – Samopoczucie z notatką
+# ================================================================
+class FormularzSamopoczucia(forms.ModelForm):
+    class Meta:
+        model = Pomiar
+        fields = ['samopoczucie', 'notatka', 'data_pomiaru']
+        widgets = {
+            'samopoczucie': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'notatka': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Jak się czujesz? Opisz swój dzień...'
+            }),
+            # Ukryte pole – wypełniane automatycznie przez JavaScript
+            'data_pomiaru': forms.DateTimeInput(attrs={
+                'class': 'form-control',
+                'type': 'datetime-local',
+                'id': 'id_data_samopoczucia'
+            }),
+        }
+        labels = {
+            'samopoczucie': 'Jak się czujesz?',
+            'notatka': 'Notatka (opcjonalnie)',
+            'data_pomiaru': 'Data i godzina',
+        }   

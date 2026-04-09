@@ -2,17 +2,12 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.utils import timezone
-from .models import Pacjentka, Pomiar, WizytaLekarska, Recepta, Lekarz
-from .forms import (FormularzRejestracji, FormularzDanePacjentki,
-                    FormularzPomiaru, FormularzWizyty,
-                    FormularzRecepty, FormularzWizytyLekarza,
-                    FormularzDaneLekarz) 
 from .decorators import tylko_pacjentka, tylko_lekarz
 from .models import Pacjentka, Pomiar, WizytaLekarska, Recepta, Lekarz, PacjentkaLekarza
 from .forms import (FormularzRejestracji, FormularzDanePacjentki,
                     FormularzPomiaru, FormularzWizyty,
                     FormularzRecepty, FormularzWizytyLekarza,
-                    FormularzDaneLekarz, FormularzDodajPacjentkePesel)
+                    FormularzDaneLekarz, FormularzDodajPacjentkePesel, FormularzSamopoczucia)
 
 
 def logowanie(request):
@@ -102,7 +97,20 @@ def dashboard(request):
     ).order_by('data_wizyty')
 
     recepty = pacjentka.recepty.filter(do_zrealizowania=True)
-    ostatnie_pomiary = pacjentka.pomiary.all()[:3]
+
+
+    ostatnie_pomiary = pacjentka.pomiary.exclude(
+        typ__in=['samopoczucie', 'cisnienie_s', 'cisnienie_r']
+    )[:3]
+
+        # Ciśnienia do połączenia w widoku
+    ostatnie_cisnienia_s = pacjentka.pomiary.filter(
+        typ='cisnienie_s'
+    ).order_by('-data_pomiaru')[:3]
+
+    ostatnie_cisnienia_r = pacjentka.pomiary.filter(
+        typ='cisnienie_r'
+    ).order_by('-data_pomiaru')[:3]
 
     return render(request, 'monitor/dashboard.html', {
         'pacjentka': pacjentka,
@@ -110,6 +118,8 @@ def dashboard(request):
         'wizyty': wizyty,
         'recepty': recepty,
         'ostatnie_pomiary': ostatnie_pomiary,
+        'ostatnie_cisnienia_s': ostatnie_cisnienia_s,
+        'ostatnie_cisnienia_r': ostatnie_cisnienia_r,
     })
 
 
@@ -120,12 +130,52 @@ def pomiary(request):
 
     if request.method == 'POST':
         akcja = request.POST.get('akcja')
+
         if akcja == 'dodaj_pomiar':
             f = FormularzPomiaru(request.POST)
             if f.is_valid():
-                pomiar = f.save(commit=False)
-                pomiar.pacjentka = pacjentka
-                pomiar.save()
+                typ = f.cleaned_data['typ']
+                data_pomiaru = f.cleaned_data['data_pomiaru']
+
+                if typ == 'cisnienie':
+                    # Rozdzielamy ciśnienie na dwa osobne pomiary
+                    cisnienie = f.cleaned_data['cisnienie']
+                    czesci = cisnienie.split('/')
+                    skurczowe = float(czesci[0].strip())
+                    rozkurczowe = float(czesci[1].strip())
+
+                    # Zapisujemy ciśnienie skurczowe
+                    Pomiar.objects.create(
+                        pacjentka=pacjentka,
+                        typ='cisnienie_s',
+                        wartosc=skurczowe,
+                        data_pomiaru=data_pomiaru
+                    )
+                    # Zapisujemy ciśnienie rozkurczowe
+                    Pomiar.objects.create(
+                        pacjentka=pacjentka,
+                        typ='cisnienie_r',
+                        wartosc=rozkurczowe,
+                        data_pomiaru=data_pomiaru
+                    )
+                else:
+                    # Pozostałe pomiary zapisujemy normalnie
+                    pomiar = f.save(commit=False)
+                    pomiar.pacjentka = pacjentka
+                    pomiar.save()
+
+                return redirect('pomiary')
+
+        elif akcja == 'dodaj_samopoczucie':
+            f = FormularzSamopoczucia(request.POST)
+            if f.is_valid():
+                # Zapisujemy samopoczucie jako specjalny typ pomiaru
+                samopoczucie = f.save(commit=False)
+                samopoczucie.pacjentka = pacjentka
+                # Typ ustawiamy na specjalną wartość
+                samopoczucie.typ = 'samopoczucie'
+                samopoczucie.wartosc = f.cleaned_data['samopoczucie']
+                samopoczucie.save()
                 return redirect('pomiary')
 
     def pobierz_dane(typ):
@@ -133,7 +183,6 @@ def pomiary(request):
             pacjentka=pacjentka,
             typ=typ
         ).order_by('data_pomiaru').values_list('data_pomiaru', 'wartosc')
-        
         return {
             'etykiety': [r[0].strftime('%d.%m %H:%M') for r in rekordy],
             'wartosci': [r[1] for r in rekordy],
@@ -141,11 +190,23 @@ def pomiary(request):
 
     return render(request, 'monitor/pomiary.html', {
         'f_pomiar': FormularzPomiaru(),
-        'historia_pomiarow': pacjentka.pomiary.all(),
+        'f_samopoczucie': FormularzSamopoczucia(),
+        'historia_pomiarow': pacjentka.pomiary.exclude(
+            typ__in=['samopoczucie', 'cisnienie_s', 'cisnienie_r']
+        ),
+        # Ciśnienia grupujemy osobno
+        'historia_cisnienia': pacjentka.pomiary.filter(
+            typ='cisnienie_s'
+        ).order_by('-data_pomiaru'),
+        'historia_cisnienia_r': pacjentka.pomiary.filter(
+            typ='cisnienie_r'
+        ).order_by('-data_pomiaru'),
+        'historia_samopoczucia': pacjentka.pomiary.filter(
+            typ='samopoczucie'
+        ).order_by('-data_pomiaru')[:10],
         'dane_glukoza': pobierz_dane('glukoza'),
         'dane_cisnienie_s': pobierz_dane('cisnienie_s'),
         'dane_cisnienie_r': pobierz_dane('cisnienie_r'),
-        'dane_waga': pobierz_dane('waga'),
     })
 
 
@@ -275,7 +336,21 @@ def szczegoly_pacjentki(request, pacjentka_id):
 
     return render(request, 'monitor/szczegoly_pacjentki.html', {
         'pacjentka': pacjentka,
-        'pomiary': pacjentka.pomiary.all(),
+        # Pomiary bez ciśnień i samopoczucia
+        'pomiary': pacjentka.pomiary.exclude(
+            typ__in=['samopoczucie', 'cisnienie_s', 'cisnienie_r']
+        ),
+        # Ciśnienia osobno do połączenia w tabeli
+        'historia_cisnienia': pacjentka.pomiary.filter(
+            typ='cisnienie_s'
+        ).order_by('-data_pomiaru'),
+        'historia_cisnienia_r': pacjentka.pomiary.filter(
+            typ='cisnienie_r'
+        ).order_by('-data_pomiaru'),
+
+        'historia_samopoczucia': pacjentka.pomiary.filter(
+            typ='samopoczucie'
+        ).order_by('-data_pomiaru'),
         'wizyty': pacjentka.wizyty.all(),
         'recepty': pacjentka.recepty.all(),
         'f_recepta': f_recepta,
@@ -283,5 +358,6 @@ def szczegoly_pacjentki(request, pacjentka_id):
         'dane_glukoza': pobierz_dane('glukoza'),
         'dane_cisnienie_s': pobierz_dane('cisnienie_s'),
         'dane_cisnienie_r': pobierz_dane('cisnienie_r'),
-        'dane_waga': pobierz_dane('waga'),
+        
     })
+

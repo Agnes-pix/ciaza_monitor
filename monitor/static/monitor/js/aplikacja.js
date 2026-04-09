@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', function () {
             'glukoza':     { min: 70,  max: 140, jednostka: 'mg/dL' },
             'cisnienie_s': { min: 90,  max: 140, jednostka: 'mmHg'  },
             'cisnienie_r': { min: 60,  max: 90,  jednostka: 'mmHg'  },
-            'waga':        { min: 40,  max: 120, jednostka: 'kg'    },
+            
             'tetno':       { min: 60,  max: 100, jednostka: '/min'  },
         };
 
@@ -168,7 +168,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // ========================================================
 
     // Szukamy formularza pomiaru po ukrytym polu akcja
-    const formularzPomiaru = document.querySelector(
+    /*const formularzPomiaru = document.querySelector(
         'input[name="akcja"][value="dodaj_pomiar"]'
     );
 
@@ -274,6 +274,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 pole.addEventListener(zdarzenie, aktualizujPodglad);
             }
         });
-    }
+    }*/
 
 }); // koniec DOMContentLoaded

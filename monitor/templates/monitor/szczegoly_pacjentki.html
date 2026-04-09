@@ -112,10 +112,7 @@
                             onclick="pokazWykres('cisnienie', this)">
                         Ciśnienie
                     </button>
-                    <button class="btn btn-outline-success btn-sm"
-                            onclick="pokazWykres('waga', this)">
-                        Waga
-                    </button>
+                    
                 </div>
             </div>
             <div class="card-body">
@@ -139,31 +136,82 @@
                             <th>Rodzaj</th>
                             <th>Wartość</th>
                             <th>Data</th>
-                            <th>Samopoczucie</th>
                         </tr>
                     </thead>
                     <tbody>
+                        <!-- Pomiary inne niż ciśnienie -->
                         {% for p in pomiary %}
                         <tr>
                             <td>{{ p.get_typ_display }}</td>
                             <td><strong>{{ p.wartosc }}</strong></td>
                             <td>{{ p.data_pomiaru|date:"d.m.Y H:i" }}</td>
-                            <td>{{ p.get_samopoczucie_display|default:"–" }}</td>
                         </tr>
-                        {% empty %}
+                        {% endfor %}
+
+                        <!-- Ciśnienie jako jeden wiersz – identycznie jak u pacjentki -->
+                        {% for s in historia_cisnienia %}
+                            {% for r in historia_cisnienia_r %}
+                                {% if s.data_pomiaru == r.data_pomiaru %}
+                                <tr>
+                                    <td>
+                                        <i class="bi bi-heart-pulse me-1 text-danger"></i>
+                                        Ciśnienie krwi
+                                    </td>
+                                    <td>
+                                        <strong>
+                                            {{ s.wartosc|floatformat:0 }}/{{ r.wartosc|floatformat:0 }}
+                                        </strong>
+                                        <small class="text-muted">mmHg</small>
+                                    </td>
+                                    <td>{{ s.data_pomiaru|date:"d.m.Y H:i" }}</td>
+                                </tr>
+                                {% endif %}
+                            {% endfor %}
+                        {% endfor %}
+
+                        {% if not pomiary and not historia_cisnienia %}
                         <tr>
-                            <td colspan="4" class="text-center text-muted py-3">
+                            <td colspan="3" class="text-center text-muted py-3">
                                 Brak pomiarów
                             </td>
                         </tr>
-                        {% endfor %}
+                        {% endif %}
                     </tbody>
                 </table>
             </div>
         </div>
 
+        <!-- Historia samopoczucia -->
+        {% if historia_samopoczucia %}
+        <div class="card mb-4">
+            <div class="card-header fw-bold">
+                <i class="bi bi-journal-text me-2"></i>Historia samopoczucia
+            </div>
+            <ul class="list-group list-group-flush">
+                {% for wpis in historia_samopoczucia %}
+                <li class="list-group-item">
+                    <div class="d-flex justify-content-between">
+                        <strong>
+                            {{ wpis.get_samopoczucie_display|default:"–" }}
+                        </strong>
+                        <small class="text-muted">
+                            {{ wpis.data_pomiaru|date:"d.m.Y H:i" }}
+                        </small>
+                    </div>
+                    {% if wpis.notatka %}
+                        <small class="text-muted fst-italic">
+                            {{ wpis.notatka }}
+                        </small>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        
+
         <!-- Zaplanowane wizyty -->
-        <div class="card">
+        <div class="card mb-4">
             <div class="card-header fw-bold">
                 <i class="bi bi-calendar3 me-2"></i>Zaplanowane wizyty
             </div>
@@ -212,10 +260,7 @@ const daneCisnienie_r = {
     etykiety: {{ dane_cisnienie_r.etykiety|safe }},
     wartosci: {{ dane_cisnienie_r.wartosci|safe }}
 };
-const daneWaga = {
-    etykiety: {{ dane_waga.etykiety|safe }},
-    wartosci: {{ dane_waga.wartosci|safe }}
-};
+
 
 let aktualnyWykres = null;
 
@@ -233,11 +278,7 @@ function pokazWykres(typ, przycisk) {
         dane = daneCisnienie_s;
         kolor = '#1976D2';
         tytul = 'Ciśnienie skurczowe (mmHg)';
-    } else {
-        dane = daneWaga;
-        kolor = '#4CAF50';
-        tytul = 'Waga (kg)';
-    }
+    } 
 
     const brakDanych = document.getElementById('brak-danych');
 

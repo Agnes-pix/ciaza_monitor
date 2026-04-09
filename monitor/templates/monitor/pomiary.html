@@ -10,34 +10,142 @@
 
 <div class="row">
 
-    <!-- LEWA KOLUMNA: Formularz dodawania pomiaru -->
+    <!-- LEWA KOLUMNA: Formularze -->
     <div class="col-md-5">
-        <div class="card">
+
+        <!-- Formularz pomiaru -->
+        <div class="card mb-4">
             <div class="card-header bg-primary text-white fw-bold">
                 <i class="bi bi-plus-circle-fill me-2"></i>Dodaj pomiar
             </div>
             <div class="card-body">
-                <form method="POST">
+                <form method="POST" id="formularz-pomiaru">
                     {% csrf_token %}
                     <input type="hidden" name="akcja" value="dodaj_pomiar">
-                    {% for pole in f_pomiar %}
+
+                    <!-- Typ pomiaru -->
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">{{ pole.label }}</label>
-                        {{ pole }}
-                        {% if pole.errors %}
-                            <div class="text-danger small mt-1">
-                                <i class="bi bi-exclamation-circle me-1"></i>
-                                {{ pole.errors }}
-                            </div>
-                        {% endif %}
+                        <label class="form-label fw-semibold">
+                            {{ f_pomiar.typ.label }}
+                        </label>
+                        {{ f_pomiar.typ }}
                     </div>
-                    {% endfor %}
+
+                    <!-- Pole wartości – ukryte dla ciśnienia -->
+                    <div class="mb-3" id="pole-wartosc">
+                        <label class="form-label fw-semibold">
+                            {{ f_pomiar.wartosc.label }}
+                        </label>
+                        {{ f_pomiar.wartosc }}
+                    </div>
+
+                    <!-- Pole ciśnienia – widoczne tylko dla ciśnienia -->
+                    <div class="mb-3 d-none" id="pole-cisnienie">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-heart-pulse me-1"></i>
+                            Ciśnienie (skurczowe/rozkurczowe)
+                        </label>
+                        {{ f_pomiar.cisnienie }}
+                        <div class="form-text">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Wpisz w formacie: <strong>120/80</strong>
+                            (skurczowe/rozkurczowe)
+                        </div>
+                    </div>
+
+                    <!-- Data pomiaru -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            {{ f_pomiar.data_pomiaru.label }}
+                        </label>
+                        {{ f_pomiar.data_pomiaru }}
+                    </div>
+
+                    {% if f_pomiar.errors %}
+                        <div class="alert alert-danger small">
+                            <i class="bi bi-exclamation-circle me-1"></i>
+                            {{ f_pomiar.errors }}
+                        </div>
+                    {% endif %}
+
                     <button type="submit" class="btn btn-primary w-100">
                         <i class="bi bi-floppy-fill me-2"></i>Zapisz pomiar
                     </button>
                 </form>
             </div>
         </div>
+
+        <!-- Formularz samopoczucia -->
+        <div class="card mb-4">
+            <div class="card-header fw-bold"
+                 style="background: linear-gradient(135deg, #880e4f, #e91e8c);">
+                <span class="text-white">
+                    <i class="bi bi-emoji-smile me-2"></i>Jak się czujesz?
+                </span>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {% csrf_token %}
+                    <input type="hidden" name="akcja" value="dodaj_samopoczucie">
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-clock me-1"></i>Data i godzina
+                        </label>
+                        {{ f_samopoczucie.data_pomiaru }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            {{ f_samopoczucie.samopoczucie.label }}
+                        </label>
+                        {{ f_samopoczucie.samopoczucie }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            {{ f_samopoczucie.notatka.label }}
+                        </label>
+                        {{ f_samopoczucie.notatka }}
+                    </div>
+
+                    <button type="submit" class="btn btn-rozowy w-100">
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                        Zapisz samopoczucie
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Historia samopoczucia -->
+        {% if historia_samopoczucia %}
+        <div class="card">
+            <div class="card-header fw-bold">
+                <i class="bi bi-journal-text me-2"></i>Historia samopoczucia
+            </div>
+            <ul class="list-group list-group-flush">
+                {% for wpis in historia_samopoczucia %}
+                <li class="list-group-item">
+                    <div class="d-flex justify-content-between">
+                        <strong>
+                            {{ wpis.get_samopoczucie_display|default:"–" }}
+                        </strong>
+                        <small class="text-muted">
+                            {{ wpis.data_pomiaru|date:"d.m.Y H:i" }}
+                        </small>
+                    </div>
+                    {% if wpis.notatka %}
+                        <small class="text-muted fst-italic">
+                            <i class="bi bi-chat-left-text me-1"></i>
+                            {{ wpis.notatka }}
+                        </small>
+                    {% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
     </div>
 
     <!-- PRAWA KOLUMNA: Wykres i historia -->
@@ -55,10 +163,6 @@
                     <button class="btn btn-outline-primary btn-sm"
                             onclick="pokazWykres('cisnienie', this)">
                         Ciśnienie
-                    </button>
-                    <button class="btn btn-outline-success btn-sm"
-                            onclick="pokazWykres('waga', this)">
-                        Waga
                     </button>
                 </div>
             </div>
@@ -83,35 +187,97 @@
                             <th>Rodzaj</th>
                             <th>Wartość</th>
                             <th>Data</th>
-                            <th>Samopoczucie</th>
                         </tr>
                     </thead>
                     <tbody>
+                        <!-- Pomiary inne niż ciśnienie -->
                         {% for p in historia_pomiarow %}
                         <tr>
                             <td>{{ p.get_typ_display }}</td>
                             <td><strong>{{ p.wartosc }}</strong></td>
                             <td>{{ p.data_pomiaru|date:"d.m.Y H:i" }}</td>
-                            <td>{{ p.get_samopoczucie_display|default:"–" }}</td>
                         </tr>
-                        {% empty %}
+                        {% endfor %}
+
+                        <!-- Ciśnienie – łączymy skurczowe i rozkurczowe w jeden wiersz -->
+                        {% for s in historia_cisnienia %}
+                            {% for r in historia_cisnienia_r %}
+                                {% if s.data_pomiaru == r.data_pomiaru %}
+                                <tr>
+                                    <td>
+                                        <i class="bi bi-heart-pulse me-1 text-danger"></i>
+                                        Ciśnienie krwi
+                                    </td>
+                                    <td>
+                                        <strong>{{ s.wartosc|floatformat:0 }}/{{ r.wartosc|floatformat:0 }}</strong>
+                                        <small class="text-muted">mmHg</small>
+                                    </td>
+                                    <td>{{ s.data_pomiaru|date:"d.m.Y H:i" }}</td>
+                                </tr>
+                                {% endif %}
+                            {% endfor %}
+                        {% endfor %}
+
+                        {% if not historia_pomiarow and not historia_cisnienia %}
                         <tr>
-                            <td colspan="4" class="text-center text-muted py-3">
+                            <td colspan="3" class="text-center text-muted py-3">
                                 <i class="bi bi-inbox me-1"></i>Brak pomiarów
                             </td>
                         </tr>
-                        {% endfor %}
+                        {% endif %}
                     </tbody>
                 </table>
             </div>
         </div>
-
     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
+// ── Pokazuje/ukrywa pole ciśnienia ────────────
+const selectTyp = document.getElementById('id_typ');
+const poleWartosc = document.getElementById('pole-wartosc');
+const poleCisnienie = document.getElementById('pole-cisnienie');
+const inputWartosc = document.getElementById('id_wartosc');
+const inputCisnienie = document.getElementById('id_cisnienie');
+
+function aktualizujPola() {
+    const typ = selectTyp ? selectTyp.value : '';
+
+    if (typ === 'cisnienie') {  // ← zmienione z cisnienie_s/cisnienie_r
+        poleCisnienie.classList.remove('d-none');
+        poleWartosc.classList.add('d-none');
+        inputCisnienie.setAttribute('required', 'required');
+        inputWartosc.removeAttribute('required');
+        inputWartosc.value = '0';
+    } else {
+        poleWartosc.classList.remove('d-none');
+        poleCisnienie.classList.add('d-none');
+        inputWartosc.setAttribute('required', 'required');
+        inputCisnienie.removeAttribute('required');
+        inputWartosc.value = '';
+    }
+}
+
+if (selectTyp) {
+    selectTyp.addEventListener('change', aktualizujPola);
+    aktualizujPola();
+}
+
+// ── Automatyczna data w formularzu samopoczucia ──
+const poleData = document.getElementById('id_data_samopoczucia');
+if (poleData) {
+    const teraz = new Date();
+    const rok = teraz.getFullYear();
+    const miesiac = String(teraz.getMonth() + 1).padStart(2, '0');
+    const dzien = String(teraz.getDate()).padStart(2, '0');
+    const godzina = String(teraz.getHours()).padStart(2, '0');
+    const minuty = String(teraz.getMinutes()).padStart(2, '0');
+    poleData.value = `${rok}-${miesiac}-${dzien}T${godzina}:${minuty}`;
+}
+
+// ── Wykresy ───────────────────────────────────
 const daneGlukoza = {
     etykiety: {{ dane_glukoza.etykiety|safe }},
     wartosci: {{ dane_glukoza.wartosci|safe }}
@@ -124,10 +290,6 @@ const daneCisnienie_r = {
     etykiety: {{ dane_cisnienie_r.etykiety|safe }},
     wartosci: {{ dane_cisnienie_r.wartosci|safe }}
 };
-const daneWaga = {
-    etykiety: {{ dane_waga.etykiety|safe }},
-    wartosci: {{ dane_waga.wartosci|safe }}
-};
 
 let aktualnyWykres = null;
 
@@ -136,11 +298,13 @@ function pokazWykres(typ, przycisk) {
 
     let dane, kolor, tytul;
     if (typ === 'glukoza') {
-        dane = daneGlukoza; kolor = '#e91e8c'; tytul = 'Glukoza (mg/dL)';
-    } else if (typ === 'cisnienie') {
-        dane = daneCisnienie_s; kolor = '#1976D2'; tytul = 'Ciśnienie (mmHg)';
+        dane = daneGlukoza;
+        kolor = '#e91e8c';
+        tytul = 'Glukoza (mg/dL)';
     } else {
-        dane = daneWaga; kolor = '#4CAF50'; tytul = 'Waga (kg)';
+        dane = daneCisnienie_s;
+        kolor = '#1976D2';
+        tytul = 'Ciśnienie skurczowe (mmHg)';
     }
 
     const brakDanych = document.getElementById('brak-danych');
@@ -154,19 +318,18 @@ function pokazWykres(typ, przycisk) {
         label: tytul,
         data: dane.wartosci,
         borderColor: kolor,
-        backgroundColor: kolor + '33',
+        backgroundColor: 'rgba(0,0,0,0)',
         tension: 0.3,
         fill: true,
         pointRadius: 5,
-        pointHoverRadius: 8,
     }];
 
     if (typ === 'cisnienie') {
         datasets.push({
-            label: 'Ciśnienie rozkurczowe',
+            label: 'Ciśnienie rozkurczowe (mmHg)',
             data: daneCisnienie_r.wartosci,
             borderColor: '#FF9800',
-            backgroundColor: '#FF980033',
+            backgroundColor: 'rgba(0,0,0,0)',
             tension: 0.3,
             fill: false,
             pointRadius: 5,
