@@ -55,6 +55,7 @@
             </div>
         </div>
 
+        
         <!-- Formularz wizyty -->
         <div class="card mb-4">
             <div class="card-header fw-bold" style="background-color:#fff3cd;">
@@ -62,6 +63,11 @@
                 Umów wizytę
             </div>
             <div class="card-body">
+                <!-- Info dla kogo umawiamy -->
+                <div class="alert alert-light border mb-3">
+                    <i class="bi bi-person-circle me-2 text-primary"></i>
+                    Wizyta dla: <strong>{{ pacjentka }}</strong>
+                </div>
                 <form method="POST">
                     {% csrf_token %}
                     <input type="hidden" name="akcja" value="umow_wizyte">
@@ -69,6 +75,9 @@
                     <div class="mb-3">
                         <label class="form-label fw-semibold">{{ pole.label }}</label>
                         {{ pole }}
+                        {% if pole.errors %}
+                            <div class="text-danger small mt-1">{{ pole.errors }}</div>
+                        {% endif %}
                     </div>
                     {% endfor %}
                     <button type="submit" class="btn btn-warning w-100">

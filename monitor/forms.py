@@ -312,3 +312,33 @@ class FormularzReceptyDlaPacjentki(forms.ModelForm):
             'dawkowanie': 'Ilość opakowań',
             'uwagi': 'Uwagi dla pacjentki',
         }
+
+class FormularzWizytyDlaPacjentki(forms.ModelForm):
+    """Formularz wizyty bez wyboru pacjentki – używany w szczegółach"""
+    class Meta:
+        model = WizytaLekarska
+        fields = ['data_wizyty', 'miejsce', 'specjalizacja', 'notatki']
+        widgets = {
+            'data_wizyty': forms.DateTimeInput(attrs={
+                'class': 'form-control',
+                'type': 'datetime-local'
+            }),
+            'miejsce': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'np. Przychodnia nr 5'
+            }),
+            'specjalizacja': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'np. Ginekolog'
+            }),
+            'notatki': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3
+            }),
+        }
+        labels = {
+            'data_wizyty': 'Data i godzina wizyty',
+            'miejsce': 'Miejsce (nazwa przychodni)',
+            'specjalizacja': 'Rodzaj wizyty',
+            'notatki': 'Notatki',
+        }

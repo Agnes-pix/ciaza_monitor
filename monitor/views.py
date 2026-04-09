@@ -7,7 +7,8 @@ from .models import Pacjentka, Pomiar, WizytaLekarska, Recepta, Lekarz, Pacjentk
 from .forms import (FormularzRejestracji, FormularzDanePacjentki,
                     FormularzPomiaru, FormularzWizyty,
                     FormularzRecepty, FormularzWizytyLekarza,
-                    FormularzDaneLekarz, FormularzDodajPacjentkePesel, FormularzSamopoczucia, FormularzReceptyDlaPacjentki)
+                    FormularzDaneLekarz, FormularzDodajPacjentkePesel, FormularzSamopoczucia, 
+                    FormularzReceptyDlaPacjentki, FormularzWizytyDlaPacjentki)
 
 
 def logowanie(request):
@@ -312,13 +313,14 @@ def szczegoly_pacjentki(request, pacjentka_id):
                
 
         elif akcja == 'umow_wizyte':
-            f = FormularzWizytyLekarza(request.POST)
+            f = FormularzWizytyDlaPacjentki(request.POST)
             if f.is_valid():
                 wizyta = f.save(commit=False)
                 wizyta.lekarz = request.user
                 wizyta.pacjentka = pacjentka
                 wizyta.save()
-                return redirect('szczegoly_pacjentki', pacjentka_id=pacjentka_id)
+                return redirect('szczegoly_pacjentki', 
+                                pacjentka_id=pacjentka_id)
 
     # Dane do wykresów – tak samo jak u pacjentki
     def pobierz_dane(typ):
@@ -333,9 +335,7 @@ def szczegoly_pacjentki(request, pacjentka_id):
 
     # Formularze z pacjentką już wypełnioną
     f_recepta = FormularzReceptyDlaPacjentki()
-    f_wizyta = FormularzWizytyLekarza(
-        initial={'pacjentka': pacjentka}
-    )
+    f_wizyta = FormularzWizytyDlaPacjentki()
 
     return render(request, 'monitor/szczegoly_pacjentki.html', {
         'pacjentka': pacjentka,
