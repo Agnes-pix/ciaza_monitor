@@ -2,14 +2,17 @@ from django.db import models
 from django.contrib.auth.models import User
 
 
-
+# ================================================================
+# MODEL 1 – Pacjentka
+# Rozszerza wbudowany model User o dane medyczne
+# Relacja: jeden User = jedna Pacjentka (OneToOne)
+# ================================================================
 class Pacjentka(models.Model):
-    
     uzytkownik = models.OneToOneField(
         User,
         on_delete=models.CASCADE
     )
-    pesel = models.CharField(max_length=11, unique=True) 
+    pesel = models.CharField(max_length=11, unique=True)
     data_urodzenia = models.DateField()
     przewidywana_data_porodu = models.DateField()
     telefon = models.CharField(max_length=20, blank=True)
@@ -22,15 +25,29 @@ class Pacjentka(models.Model):
         verbose_name_plural = 'Pacjentki'
 
 
-
+# ================================================================
+# MODEL 2 – Pomiar
+# Przechowuje wszystkie pomiary pacjentki
+# Relacja: wiele Pomiarów należy do jednej Pacjentki (ForeignKey)
+#
+# Typy pomiarów w bazie:
+# - 'glukoza'      – poziom glukozy
+# - 'cisnienie_s'  – ciśnienie skurczowe (część pary 120/80)
+# - 'cisnienie_r'  – ciśnienie rozkurczowe (część pary 120/80)
+# - 'tetno'        – tętno
+# - 'samopoczucie' – samopoczucie z notatką
+#
+# UWAGA: W formularzu ciśnienie wybierane jest jako jedno pole
+# w formacie 120/80 i rozdzielane na dwa rekordy w bazie
+# ================================================================
 class Pomiar(models.Model):
+    # Typy wyświetlane użytkownikowi w formularzu
     TYPY_POMIAROW = [
         ('glukoza', 'Poziom glukozy (mg/dL)'),
-        ('cisnienie', 'Ciśnienie krwi (mmHg)'),  # ← zmieniona etykieta
-        # ('cisnienie_r', 'Ciśnienie rozkurczowe (mmHg)'),  # zostaje w bazie
-        
+        ('cisnienie', 'Ciśnienie krwi (mmHg)'),
         ('tetno', 'Tętno (uderzenia/min)'),
     ]
+
     SAMOPOCZUCIE_WYBORY = [
         (1, '😞 Bardzo złe'),
         (2, '😕 Złe'),
@@ -39,13 +56,27 @@ class Pomiar(models.Model):
         (5, '😊 Bardzo dobre'),
     ]
 
-   
+    WSZYSTKIE_TYPY = {
+    'glukoza': 'Poziom glukozy (mg/dL)',
+    'cisnienie': 'Ciśnienie krwi (mmHg)',
+    'cisnienie_s': 'Ciśnienie skurczowe (mmHg)',
+    'cisnienie_r': 'Ciśnienie rozkurczowe (mmHg)',
+    'tetno': 'Tętno (uderzenia/min)',
+    'samopoczucie': 'Samopoczucie',
+    }
+
     pacjentka = models.ForeignKey(
         Pacjentka,
         on_delete=models.CASCADE,
         related_name='pomiary'
     )
-    typ = models.CharField(max_length=20, choices=TYPY_POMIAROW)
+    # typ przechowuje wartości z TYPY_POMIAROW oraz
+    # 'cisnienie_s', 'cisnienie_r', 'samopoczucie' – wewnętrzne typy
+    typ = models.CharField(
+    max_length=20,
+    choices=TYPY_POMIAROW,
+    blank=True
+    )
     wartosc = models.FloatField()
     data_pomiaru = models.DateTimeField()
     samopoczucie = models.IntegerField(
@@ -57,6 +88,9 @@ class Pomiar(models.Model):
 
     def __str__(self):
         return f"{self.pacjentka} – {self.typ}: {self.wartosc}"
+    
+    def get_typ_nazwa(self):
+        return self.WSZYSTKIE_TYPY.get(self.typ, self.typ)
 
     class Meta:
         ordering = ['-data_pomiaru']
@@ -64,7 +98,12 @@ class Pomiar(models.Model):
         verbose_name_plural = 'Pomiary'
 
 
-
+# ================================================================
+# MODEL 3 – WizytaLekarska
+# Wizyta umawiania przez lekarza dla konkretnej pacjentki
+# Relacja: wiele Wizyt należy do jednej Pacjentki (ForeignKey)
+# Relacja: wiele Wizyt należy do jednego Lekarza (ForeignKey)
+# ================================================================
 class WizytaLekarska(models.Model):
     pacjentka = models.ForeignKey(
         Pacjentka,
@@ -93,7 +132,12 @@ class WizytaLekarska(models.Model):
         verbose_name_plural = 'Wizyty lekarskie'
 
 
-
+# ================================================================
+# MODEL 4 – Recepta
+# Recepta wypisana przez lekarza dla pacjentki
+# Relacja: wiele Recept może być przypisanych do wielu Pacjentek
+# (ManyToMany) – jedna recepta może dotyczyć wielu pacjentek
+# ================================================================
 class Recepta(models.Model):
     lekarz = models.ForeignKey(
         User,
@@ -101,7 +145,6 @@ class Recepta(models.Model):
         null=True,
         related_name='wypisane_recepty'
     )
-    
     pacjentki = models.ManyToManyField(
         Pacjentka,
         related_name='recepty'
@@ -119,34 +162,41 @@ class Recepta(models.Model):
         verbose_name = 'Recepta'
         verbose_name_plural = 'Recepty'
 
+
+# ================================================================
+# MODEL 5 – Lekarz
+# Rozszerza wbudowany model User o dane zawodowe
+# Relacja: jeden User = jeden Lekarz (OneToOne)
+# Imię i nazwisko przechowywane są w modelu User
+# ================================================================
 class Lekarz(models.Model):
     uzytkownik = models.OneToOneField(
         User,
         on_delete=models.CASCADE
     )
-    imie = models.CharField(max_length=100)
-    nazwisko = models.CharField(max_length=100)
-    miejsce_pracy = models.CharField(max_length=200)
-    specjalizacja = models.CharField(max_length=100, blank=True)
-    telefon = models.CharField(max_length=20, blank=True)
     pwz = models.CharField(
         max_length=7,
-        unique=True,       # każdy numer PWZ unikalny
+        unique=True,
         blank=True,
         null=True
     )
+    miejsce_pracy = models.CharField(max_length=200, blank=True)
+    specjalizacja = models.CharField(max_length=100, blank=True)
+    telefon = models.CharField(max_length=20, blank=True)
 
     def __str__(self):
-        return f"Dr {self.imie} {self.nazwisko}"
+        return f"Dr {self.uzytkownik.first_name} {self.uzytkownik.last_name}"
 
     class Meta:
         verbose_name = 'Lekarz'
         verbose_name_plural = 'Lekarze'
 
+
 # ================================================================
-# MODEL – PacjentkaLekarza
-# Lekarz dodaje pacjentkę po PESEL – tworzy się relacja
-# Relacja WIELE DO WIELU między Lekarzem a Pacjentką
+# MODEL 6 – PacjentkaLekarza
+# Łączy lekarza z jego pacjentkami
+# Lekarz dodaje pacjentkę po PESEL – tworzy się ta relacja
+# Relacja: wiele do wielu między User (lekarz) a Pacjentka
 # ================================================================
 class PacjentkaLekarza(models.Model):
     lekarz = models.ForeignKey(
@@ -162,7 +212,6 @@ class PacjentkaLekarza(models.Model):
     data_dodania = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        # unique_together = lekarz może mieć pacjentkę tylko raz na liście
         unique_together = ['lekarz', 'pacjentka']
         verbose_name = 'Pacjentka lekarza'
         verbose_name_plural = 'Pacjentki lekarza'

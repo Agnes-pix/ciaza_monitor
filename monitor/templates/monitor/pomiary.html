@@ -193,7 +193,7 @@
                         <!-- Pomiary inne niż ciśnienie -->
                         {% for p in historia_pomiarow %}
                         <tr>
-                            <td>{{ p.get_typ_display }}</td>
+                            <td>{{ p.get_typ_nazwa }}</td>
                             <td><strong>{{ p.wartosc }}</strong></td>
                             <td>{{ p.data_pomiaru|date:"d.m.Y H:i" }}</td>
                         </tr>

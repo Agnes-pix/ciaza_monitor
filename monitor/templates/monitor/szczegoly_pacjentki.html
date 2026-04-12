@@ -157,7 +157,7 @@
                         <!-- Pomiary inne niż ciśnienie -->
                         {% for p in pomiary %}
                         <tr>
-                            <td>{{ p.get_typ_display }}</td>
+                            <td>{{ p.get_typ_nazwa }}</td>
                             <td><strong>{{ p.wartosc }}</strong></td>
                             <td>{{ p.data_pomiaru|date:"d.m.Y H:i" }}</td>
                         </tr>
@@ -170,11 +170,11 @@
                                 <tr>
                                     <td>
                                         <i class="bi bi-heart-pulse me-1 text-danger"></i>
-                                        Ciśnienie krwi
+                                        Ciśnienie krwi 
                                     </td>
                                     <td>
                                         <strong>
-                                            {{ s.wartosc|floatformat:0 }}/{{ r.wartosc|floatformat:0 }}
+                                            {{ s.wartosc|floatformat:0 }}/{{ r.wartosc|floatformat:0 }} 
                                         </strong>
                                         <small class="text-muted">mmHg</small>
                                     </td>

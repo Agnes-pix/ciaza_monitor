@@ -22,14 +22,13 @@
                 <form method="POST" id="formularz-rejestracji">
                     {% csrf_token %}
 
-                    <!-- KROK 1: Wybór roli – zawsze widoczny -->
+                    <!-- KROK 1: Wybór roli – przyciski radio -->
                     <div class="mb-4">
                         <label class="form-label fw-semibold">
                             <i class="bi bi-person-badge me-1"></i>
                             Rejestruję się jako
                         </label>
                         <div class="d-flex gap-3 mt-2">
-                            <!-- Przycisk wyboru PACJENTKA -->
                             <div class="flex-fill">
                                 <input type="radio"
                                        class="btn-check"
@@ -44,7 +43,6 @@
                                     Jestem pacjentką
                                 </label>
                             </div>
-                            <!-- Przycisk wyboru LEKARZ -->
                             <div class="flex-fill">
                                 <input type="radio"
                                        class="btn-check"
@@ -69,23 +67,29 @@
                             <i class="bi bi-key-fill me-2 text-secondary"></i>
                             Dane konta
                         </h5>
+                        <!--
+                            Pomijamy pole 'rola' w pętli bo jest już
+                            wyświetlone jako przyciski radio powyżej
+                        -->
                         {% for pole in f_user %}
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">
-                                {{ pole.label }}
-                            </label>
-                            {{ pole }}
-                            {% if pole.errors %}
-                                <div class="text-danger small mt-1">
-                                    <i class="bi bi-exclamation-circle me-1"></i>
-                                    {{ pole.errors }}
-                                </div>
+                            {% if pole.name != 'rola' %}
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">
+                                    {{ pole.label }}
+                                </label>
+                                {{ pole }}
+                                {% if pole.errors %}
+                                    <div class="text-danger small mt-1">
+                                        <i class="bi bi-exclamation-circle me-1"></i>
+                                        {{ pole.errors }}
+                                    </div>
+                                {% endif %}
+                            </div>
                             {% endif %}
-                        </div>
                         {% endfor %}
                     </div>
 
-                    <!-- KROK 3a: Dane pacjentki -->
+                    <!-- KROK 3a: Dane medyczne pacjentki -->
                     <div id="dane-pacjentki" style="display:none;">
                         <hr>
                         <h5 class="mb-3">
@@ -107,7 +111,7 @@
                         {% endfor %}
                     </div>
 
-                    <!-- KROK 3b: Dane lekarza -->
+                    <!-- KROK 3b: Dane zawodowe lekarza -->
                     <div id="dane-lekarza" style="display:none;">
                         <hr>
                         <h5 class="mb-3">
@@ -129,9 +133,10 @@
                         {% endfor %}
                     </div>
 
-                    <!-- Przycisk – pojawia się po wyborze roli -->
+                    <!-- Przycisk pojawia się dopiero po wyborze roli -->
                     <div id="przycisk-rejestracji" style="display:none;">
-                        <button type="submit" class="btn btn-rozowy w-100 mt-3 py-2">
+                        <button type="submit"
+                                class="btn btn-rozowy w-100 mt-3 py-2">
                             <i class="bi bi-check-circle-fill me-2"></i>
                             Zarejestruj się
                         </button>
@@ -149,8 +154,6 @@
 </div>
 
 <script>
-// Pobieramy wszystkie pola lekarza i pacjentki
-// żeby ustawiać required dynamicznie
 const polaPacjentki = document.querySelectorAll(
     '#dane-pacjentki input, #dane-pacjentki select'
 );
@@ -158,7 +161,6 @@ const polaLekarza = document.querySelectorAll(
     '#dane-lekarza input, #dane-lekarza select'
 );
 
-// Funkcja ustawiająca pole jako wymagane lub nie
 function ustawWymagane(pola, czyWymagane) {
     pola.forEach(function(pole) {
         if (czyWymagane) {
@@ -169,28 +171,19 @@ function ustawWymagane(pola, czyWymagane) {
     });
 }
 
-// Nasłuchujemy kliknięcia na przyciski radio
 document.querySelectorAll('input[name="rola"]').forEach(function(radio) {
     radio.addEventListener('change', function() {
-
-        // Pokaż sekcję danych konta
         document.getElementById('sekcja-dane-konta').style.display = 'block';
-        // Pokaż przycisk rejestracji
         document.getElementById('przycisk-rejestracji').style.display = 'block';
 
         if (this.value === 'pacjentka') {
-            // Pokaż dane pacjentki, ukryj dane lekarza
             document.getElementById('dane-pacjentki').style.display = 'block';
             document.getElementById('dane-lekarza').style.display = 'none';
-            // Ustaw wymagane pola
             ustawWymagane(polaPacjentki, true);
             ustawWymagane(polaLekarza, false);
-
-        } else if (this.value === 'lekarz') {
-            // Pokaż dane lekarza, ukryj dane pacjentki
+        } else {
             document.getElementById('dane-lekarza').style.display = 'block';
             document.getElementById('dane-pacjentki').style.display = 'none';
-            // Ustaw wymagane pola
             ustawWymagane(polaLekarza, true);
             ustawWymagane(polaPacjentki, false);
         }
