@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 from .models import Pacjentka, Pomiar, WizytaLekarska, Recepta, Lekarz
-
+from .models import Pacjentka, Pomiar, WizytaLekarska, Recepta, Lekarz, PlikBadan
 
 # ================================================================
 # FORMULARZ 1 – Rejestracja użytkownika
@@ -326,3 +326,43 @@ class FormularzDodajPacjentkePesel(forms.Form):
         if len(pesel) != 11:
             raise forms.ValidationError('PESEL musi mieć dokładnie 11 cyfr!')
         return pesel
+    
+
+
+# ================================================================
+# FORMULARZ 10 – Wgrywanie pliku PDF z wynikami badań
+# Dostępny dla pacjentki – plik przypisywany automatycznie
+# Walidacja: tylko PDF, maksymalnie 10MB
+# ================================================================
+class FormularzPlikuBadan(forms.ModelForm):
+    class Meta:
+        model = PlikBadan
+        fields = ['plik', 'opis']
+        widgets = {
+            'plik': forms.FileInput(attrs={
+                'class': 'form-control',
+                'accept': '.pdf'  # przeglądarka pokazuje tylko PDF
+            }),
+            'opis': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'np. Wyniki morfologii 10.03.2026'
+            }),
+        }
+        labels = {
+            'plik': 'Wybierz plik PDF',
+            'opis': 'Opis pliku (opcjonalnie)',
+        }
+
+    def clean_plik(self):
+        plik = self.cleaned_data.get('plik')
+        if plik:
+            if not plik.name.lower().endswith('.pdf'):
+                raise forms.ValidationError(
+                    'Dozwolone są tylko pliki PDF!'
+                )
+            # Maksymalny rozmiar: 10MB
+            if plik.size > 10 * 1024 * 1024:
+                raise forms.ValidationError(
+                    'Plik jest za duży! Maksymalny rozmiar to 10MB.'
+                )
+        return plik

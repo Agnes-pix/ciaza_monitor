@@ -8,6 +8,19 @@
     Moje dane zdrowotne
 </h3>
 
+<!-- Przyciski akcji -->
+<div class="d-flex gap-2 mb-4">
+    <a href="{% url 'eksport_xlsx' %}" class="btn btn-success">
+        <i class="bi bi-file-earmark-excel-fill me-2"></i>
+        Pobierz dane (Excel)
+    </a>
+    <a href="{% url 'badania_pdf' %}" class="btn btn-danger">
+        <i class="bi bi-upload me-2"></i>
+        Wgraj wyniki badań (PDF)
+    </a>
+</div>
+
+
 <div class="row">
 
     <!-- LEWA KOLUMNA: Formularze -->

@@ -224,6 +224,43 @@
         </div>
         {% endif %}
         
+        <!-- Pliki badań – tylko podgląd, bez możliwości usunięcia -->
+<div class="card mb-4">
+    <div class="card-header bg-danger text-white fw-bold">
+        <i class="bi bi-file-earmark-medical-fill me-2"></i>
+        Wgrane wyniki badań
+    </div>
+    <ul class="list-group list-group-flush">
+        {% for plik in pliki_badan %}
+        <li class="list-group-item">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
+                    <strong>{{ plik.nazwa_pliku }}</strong><br>
+                    <small class="text-muted">
+                        <i class="bi bi-clock me-1"></i>
+                        {{ plik.data_wgrania|date:"d.m.Y H:i" }}
+                        {% if plik.opis %}
+                            · {{ plik.opis }}
+                        {% endif %}
+                    </small>
+                </div>
+                <!-- Tylko podgląd – bez przycisku usunięcia -->
+                <a href="{{ plik.plik.url }}"
+                   target="_blank"
+                   class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-eye me-1"></i>Otwórz
+                </a>
+            </div>
+        </li>
+        {% empty %}
+        <li class="list-group-item text-muted text-center py-3">
+            <i class="bi bi-inbox me-1"></i>
+            Brak wgranych plików
+        </li>
+        {% endfor %}
+    </ul>
+</div>
 
         <!-- Zaplanowane wizyty -->
         <div class="card mb-4">

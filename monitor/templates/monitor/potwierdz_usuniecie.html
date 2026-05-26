@@ -1,0 +1,38 @@
+{% extends 'monitor/base.html' %}
+{% block title %}Usuń plik{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-5">
+        <div class="card shadow border-danger">
+            <div class="card-header bg-danger text-white fw-bold">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                Potwierdź usunięcie
+            </div>
+            <div class="card-body text-center p-4">
+                <i class="bi bi-file-earmark-pdf text-danger"
+                   style="font-size:3rem"></i>
+                <h5 class="mt-3">{{ plik.nazwa_pliku }}</h5>
+                <p class="text-muted">
+                    Czy na pewno chcesz usunąć ten plik?<br>
+                    <small>Tej operacji nie można cofnąć.</small>
+                </p>
+                <div class="d-flex gap-3 justify-content-center mt-4">
+                    <!-- Potwierdzenie usunięcia – formularz POST -->
+                    <form method="POST">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash me-2"></i>Tak, usuń
+                        </button>
+                    </form>
+                    <!-- Anulowanie -->
+                    <a href="{% url 'badania_pdf' %}"
+                       class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>Anuluj
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -218,3 +218,32 @@ class PacjentkaLekarza(models.Model):
 
     def __str__(self):
         return f"Dr {self.lekarz.last_name} – {self.pacjentka}"
+    
+
+# ================================================================
+# MODEL 7 – PlikBadan
+# Przechowuje pliki PDF wgrane przez pacjentkę
+# Relacja: wiele Plików należy do jednej Pacjentki (ForeignKey)
+# ================================================================
+class PlikBadan(models.Model):
+    pacjentka = models.ForeignKey(
+        Pacjentka,
+        on_delete=models.CASCADE,
+        related_name='pliki_badan'
+    )
+    # FileField = pole przechowujące ścieżkę do pliku na dysku
+    # upload_to = podfolder w MEDIA_ROOT gdzie trafia plik
+    plik = models.FileField(upload_to='badania/')
+    nazwa_pliku = models.CharField(max_length=255)
+    data_wgrania = models.DateTimeField(auto_now_add=True)
+    # Tekst wyciągnięty z PDF – zapisujemy żeby nie czytać za każdym razem
+    wyciagniety_tekst = models.TextField(blank=True)
+    opis = models.CharField(max_length=300, blank=True)
+
+    def __str__(self):
+        return f"{self.pacjentka} – {self.nazwa_pliku}"
+
+    class Meta:
+        ordering = ['-data_wgrania']
+        verbose_name = 'Plik badań'
+        verbose_name_plural = 'Pliki badań'
