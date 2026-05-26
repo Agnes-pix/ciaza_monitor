@@ -10,7 +10,8 @@ from django.contrib.auth.models import User
 class Pacjentka(models.Model):
     uzytkownik = models.OneToOneField(
         User,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name='pacjentka'
     )
     pesel = models.CharField(max_length=11, unique=True)
     data_urodzenia = models.DateField()
@@ -24,6 +25,34 @@ class Pacjentka(models.Model):
         verbose_name = 'Pacjentka'
         verbose_name_plural = 'Pacjentki'
 
+# ================================================================
+# MODEL 5 – Lekarz
+# Rozszerza wbudowany model User o dane zawodowe
+# Relacja: jeden User = jeden Lekarz (OneToOne)
+# Imię i nazwisko przechowywane są w modelu User
+# ================================================================
+class Lekarz(models.Model):
+    uzytkownik = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        # related_name='profil_lekarza'
+    )
+    pwz = models.CharField(
+        max_length=7,
+        unique=True,
+        blank=True,
+        null=True
+    )
+    miejsce_pracy = models.CharField(max_length=200, blank=True)
+    specjalizacja = models.CharField(max_length=100, blank=True)
+    telefon = models.CharField(max_length=20, blank=True)
+
+    def __str__(self):
+        return f"Dr {self.uzytkownik.first_name} {self.uzytkownik.last_name}"
+
+    class Meta:
+        verbose_name = 'Lekarz'
+        verbose_name_plural = 'Lekarze'
 
 # ================================================================
 # MODEL 2 – Pomiar
@@ -111,10 +140,10 @@ class WizytaLekarska(models.Model):
         related_name='wizyty'
     )
     lekarz = models.ForeignKey(
-        User,
+        Lekarz,
         on_delete=models.SET_NULL,
         null=True,
-        blank=True,
+        # blank=True,
         related_name='wizyty_lekarza'
     )
     data_wizyty = models.DateTimeField()
@@ -140,13 +169,14 @@ class WizytaLekarska(models.Model):
 # ================================================================
 class Recepta(models.Model):
     lekarz = models.ForeignKey(
-        User,
+        Lekarz,
         on_delete=models.SET_NULL,
         null=True,
         related_name='wypisane_recepty'
     )
-    pacjentki = models.ManyToManyField(
+    pacjentka = models.ForeignKey(
         Pacjentka,
+        on_delete=models.CASCADE,
         related_name='recepty'
     )
     nazwa_leku = models.CharField(max_length=200)
@@ -163,34 +193,6 @@ class Recepta(models.Model):
         verbose_name_plural = 'Recepty'
 
 
-# ================================================================
-# MODEL 5 – Lekarz
-# Rozszerza wbudowany model User o dane zawodowe
-# Relacja: jeden User = jeden Lekarz (OneToOne)
-# Imię i nazwisko przechowywane są w modelu User
-# ================================================================
-class Lekarz(models.Model):
-    uzytkownik = models.OneToOneField(
-        User,
-        on_delete=models.CASCADE
-    )
-    pwz = models.CharField(
-        max_length=7,
-        unique=True,
-        blank=True,
-        null=True
-    )
-    miejsce_pracy = models.CharField(max_length=200, blank=True)
-    specjalizacja = models.CharField(max_length=100, blank=True)
-    telefon = models.CharField(max_length=20, blank=True)
-
-    def __str__(self):
-        return f"Dr {self.uzytkownik.first_name} {self.uzytkownik.last_name}"
-
-    class Meta:
-        verbose_name = 'Lekarz'
-        verbose_name_plural = 'Lekarze'
-
 
 # ================================================================
 # MODEL 6 – PacjentkaLekarza
@@ -200,7 +202,7 @@ class Lekarz(models.Model):
 # ================================================================
 class PacjentkaLekarza(models.Model):
     lekarz = models.ForeignKey(
-        User,
+        Lekarz,
         on_delete=models.CASCADE,
         related_name='moje_pacjentki'
     )
@@ -217,7 +219,7 @@ class PacjentkaLekarza(models.Model):
         verbose_name_plural = 'Pacjentki lekarza'
 
     def __str__(self):
-        return f"Dr {self.lekarz.last_name} – {self.pacjentka}"
+        return f"Dr {self.lekarz.uzytkownik.last_name} – {self.pacjentka}"
     
 
 # ================================================================

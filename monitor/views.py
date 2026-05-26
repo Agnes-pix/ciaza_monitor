@@ -528,7 +528,7 @@ def panel_lekarza(request):
                 try:
                     pacjentka = Pacjentka.objects.get(pesel=pesel)
                     _, utworzono = PacjentkaLekarza.objects.get_or_create(
-                        lekarz=request.user,
+                        lekarz=request.user.lekarz,
                         pacjentka=pacjentka
                     )
                     komunikat = (
@@ -542,14 +542,14 @@ def panel_lekarza(request):
 
             return render(request, 'monitor/panel_lekarza.html', {
                 'pacjentki': PacjentkaLekarza.objects.filter(
-                    lekarz=request.user
+                    lekarz=request.user.lekarz
                 ),
                 'f_dodaj_pacjentke': f,
                 'komunikat': komunikat,
             })
 
     return render(request, 'monitor/panel_lekarza.html', {
-        'pacjentki': PacjentkaLekarza.objects.filter(lekarz=request.user),
+        'pacjentki': PacjentkaLekarza.objects.filter(lekarz=request.user.lekarz),
         'f_dodaj_pacjentke': FormularzDodajPacjentkePesel(),
         'komunikat': komunikat,
     })
@@ -566,7 +566,7 @@ def szczegoly_pacjentki(request, pacjentka_id):
     # Sprawdzamy że lekarz ma tę pacjentkę na swojej liście
     relacja = get_object_or_404(
         PacjentkaLekarza,
-        lekarz=request.user,
+        lekarz=request.user.lekarz,
         pacjentka__id=pacjentka_id
     )
     pacjentka = relacja.pacjentka
@@ -578,10 +578,12 @@ def szczegoly_pacjentki(request, pacjentka_id):
             f = FormularzReceptyDlaPacjentki(request.POST)
             if f.is_valid():
                 recepta = f.save(commit=False)
-                recepta.lekarz = request.user
+                
+                recepta.lekarz = request.user.lekarz
+                recepta.pacjentka = pacjentka
                 recepta.save()
                 # Przypisujemy receptę do tej konkretnej pacjentki
-                recepta.pacjentki.add(pacjentka)
+                
                 return redirect('szczegoly_pacjentki',
                                 pacjentka_id=pacjentka_id)
 
@@ -589,7 +591,7 @@ def szczegoly_pacjentki(request, pacjentka_id):
             f = FormularzWizytyDlaPacjentki(request.POST)
             if f.is_valid():
                 wizyta = f.save(commit=False)
-                wizyta.lekarz = request.user
+                wizyta.lekarz = request.user.lekarz
                 wizyta.pacjentka = pacjentka
                 wizyta.save()
                 return redirect('szczegoly_pacjentki',

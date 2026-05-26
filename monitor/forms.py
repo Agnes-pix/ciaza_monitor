@@ -236,13 +236,13 @@ class FormularzSamopoczucia(forms.ModelForm):
 class FormularzRecepty(forms.ModelForm):
     class Meta:
         model = Recepta
-        fields = ['pacjentki', 'nazwa_leku', 'dawkowanie', 'uwagi']
+        fields = ['pacjentka', 'nazwa_leku', 'dawkowanie', 'uwagi']
         widgets = {
-            'pacjentki': forms.CheckboxSelectMultiple(),
+            'pacjentka': forms.Select(attrs={'class': 'form-select'}),
             'uwagi': forms.Textarea(attrs={'rows': 3}),
         }
         labels = {
-            'pacjentki': 'Wybierz pacjentkę',
+            'pacjentka': 'Wybierz pacjentkę',
             'nazwa_leku': 'Nazwa leku',
             'dawkowanie': 'Ilość opakowań',
             'uwagi': 'Uwagi dla pacjentki',
