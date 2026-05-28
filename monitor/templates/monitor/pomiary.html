@@ -188,6 +188,45 @@
             </div>
         </div>
 
+        <!-- Filtrowanie pomiarów -->
+        <div class="card mb-4">
+            <div class="card-header fw-bold">
+                <i class="bi bi-funnel-fill me-2"></i>Filtruj historię pomiarów
+            </div>
+            <div class="card-body">
+                <form method="GET" action="{% url 'pomiary' %}">
+                    <div class="row g-2">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small">
+                                {{ f_filtr.typ.label }}
+                            </label>
+                            {{ f_filtr.typ }}
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold small">
+                                {{ f_filtr.data_od.label }}
+                            </label>
+                            {{ f_filtr.data_od }}
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold small">
+                                {{ f_filtr.data_do.label }}
+                            </label>
+                            {{ f_filtr.data_do }}
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2 mt-3">
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="bi bi-search me-1"></i>Filtruj
+                        </button>
+                        <a href="{% url 'pomiary' %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-x-circle me-1"></i>Wyczyść
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <!-- Historia pomiarów -->
         <div class="card">
             <div class="card-header fw-bold">
@@ -241,6 +280,87 @@
                     </tbody>
                 </table>
             </div>
+
+            <!-- Kontrolka paginacji -->
+            {% with historia_pomiarow as strona %}
+            {% if strona.paginator.num_pages > 1 or historia_cisnienia.paginator.num_pages > 1 %}
+            <div class="card-footer">
+                <!-- Wybór liczby wyników na stronę -->
+                <form method="GET" action="{% url 'pomiary' %}" class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                    {% if request.GET.typ %}<input type="hidden" name="typ" value="{{ request.GET.typ }}">{% endif %}
+                    {% if request.GET.data_od %}<input type="hidden" name="data_od" value="{{ request.GET.data_od }}">{% endif %}
+                    {% if request.GET.data_do %}<input type="hidden" name="data_do" value="{{ request.GET.data_do }}">{% endif %}
+                    <label class="form-label mb-0 small fw-semibold">Wyników na stronę:</label>
+                    <select name="na_strone" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+                    <option value="5"  {% if wynikow_na_strone == 5  %}selected{% endif %}>5</option>
+                    <option value="10" {% if wynikow_na_strone == 10 %}selected{% endif %}>10</option>
+                    <option value="20" {% if wynikow_na_strone == 20 %}selected{% endif %}>20</option>
+                    <option value="50" {% if wynikow_na_strone == 50 %}selected{% endif %}>50</option>
+                    </select>
+                    <span class="text-muted small">
+                        Strona {{ strona.number }} z {{ strona.paginator.num_pages }}
+                    </span>
+                </form>
+
+                <!-- Przyciski stron -->
+                <nav>
+                    <ul class="pagination pagination-sm mb-0 flex-wrap">
+                        {% if strona.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% if request.GET.typ %}typ={{ request.GET.typ }}&{% endif %}{% if request.GET.data_od %}data_od={{ request.GET.data_od }}&{% endif %}{% if request.GET.data_do %}data_do={{ request.GET.data_do }}&{% endif %}na_strone={{ wynikow_na_strone }}&strona=1">
+                                <i class="bi bi-chevron-double-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?{% if request.GET.typ %}typ={{ request.GET.typ }}&{% endif %}{% if request.GET.data_od %}data_od={{ request.GET.data_od }}&{% endif %}{% if request.GET.data_do %}data_do={{ request.GET.data_do }}&{% endif %}na_strone={{ wynikow_na_strone }}&strona={{ strona.previous_page_number }}">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        {% for num in strona.paginator.page_range %}
+                            {% if num == strona.number %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                            {% elif num >= strona.number|add:"-2" and num <= strona.number|add:"2" %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% if request.GET.typ %}typ={{ request.GET.typ }}&{% endif %}{% if request.GET.data_od %}data_od={{ request.GET.data_od }}&{% endif %}{% if request.GET.data_do %}data_do={{ request.GET.data_do }}&{% endif %}na_strone={{ wynikow_na_strone }}&strona={{ num }}">{{ num }}</a>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if strona.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% if request.GET.typ %}typ={{ request.GET.typ }}&{% endif %}{% if request.GET.data_od %}data_od={{ request.GET.data_od }}&{% endif %}{% if request.GET.data_do %}data_do={{ request.GET.data_do }}&{% endif %}na_strone={{ wynikow_na_strone }}&strona={{ strona.next_page_number }}">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?{% if request.GET.typ %}typ={{ request.GET.typ }}&{% endif %}{% if request.GET.data_od %}data_od={{ request.GET.data_od }}&{% endif %}{% if request.GET.data_do %}data_do={{ request.GET.data_do }}&{% endif %}na_strone={{ wynikow_na_strone }}&strona={{ strona.paginator.num_pages }}">
+                                <i class="bi bi-chevron-double-right"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+
+                <!-- Skok do strony -->
+                <form method="GET" action="{% url 'pomiary' %}" class="d-flex align-items-center gap-2 mt-2">
+                    {% if request.GET.typ %}<input type="hidden" name="typ" value="{{ request.GET.typ }}">{% endif %}
+                    {% if request.GET.data_od %}<input type="hidden" name="data_od" value="{{ request.GET.data_od }}">{% endif %}
+                    {% if request.GET.data_do %}<input type="hidden" name="data_do" value="{{ request.GET.data_do }}">{% endif %}
+                    <input type="hidden" name="na_strone" value="{{ wynikow_na_strone }}">
+                    <label class="form-label mb-0 small">Przejdź do strony:</label>
+                    <input type="number" name="strona" class="form-control form-control-sm"
+                           style="width:70px" min="1" max="{{ strona.paginator.num_pages }}"
+                           value="{{ strona.number }}">
+                    <button type="submit" class="btn btn-outline-primary btn-sm">OK</button>
+                </form>
+            </div>
+            {% endif %}
+            {% endwith %}
+
         </div>
     </div>
 </div>

@@ -2,6 +2,8 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.utils import timezone
+from django.db.models import Q
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from .decorators import tylko_pacjentka, tylko_lekarz
 from .models import Pacjentka, Pomiar, WizytaLekarska, Recepta, PacjentkaLekarza, PlikBadan
 from .forms import (
@@ -15,6 +17,8 @@ from .forms import (
     FormularzWizytyDlaPacjentki,
     FormularzDodajPacjentkePesel,
     FormularzPlikuBadan,
+    FormularzFiltrowaniaPomiarow,
+    FormularzFiltrowaniaPacjentek,
 )
 from django.http import HttpResponse
 import io
@@ -140,10 +144,6 @@ def dashboard(request):
 # GET: pokazuje formularz i historię pomiarów
 # POST: zapisuje nowy pomiar lub samopoczucie
 #
-# Logika ciśnienia:
-# - pacjentka wpisuje format 120/80
-# - widok rozdziela na dwa rekordy: cisnienie_s i cisnienie_r
-# - w szablonie łączone z powrotem jako para do wyświetlenia
 # ================================================================
 @tylko_pacjentka
 def pomiary(request):
@@ -189,6 +189,107 @@ def pomiary(request):
                 wpis.save()
                 return redirect('pomiary')
 
+    # ── Filtrowanie ───────────────────────────────────────────────
+    f_filtr = FormularzFiltrowaniaPomiarow(request.GET or None)
+
+    # Bazowy queryset – wszystkie pomiary poza wewnętrznymi typami ciśnienia
+    historia_pomiarow = pacjentka.pomiary.exclude(
+        typ__in=['samopoczucie', 'cisnienie_s', 'cisnienie_r']
+    )
+    historia_cisnienia = pacjentka.pomiary.filter(
+        typ='cisnienie_s'
+    ).order_by('-data_pomiaru')
+    historia_cisnienia_r = pacjentka.pomiary.filter(
+        typ='cisnienie_r'
+    ).order_by('-data_pomiaru')
+
+    if f_filtr.is_valid():
+        typ_filtr = f_filtr.cleaned_data.get('typ')
+        data_od = f_filtr.cleaned_data.get('data_od')
+        data_do = f_filtr.cleaned_data.get('data_do')
+
+        if typ_filtr == 'cisnienie':
+            # Dla ciśnienia filtrujemy tylko ciśnieniowe rekordy
+            historia_pomiarow = historia_pomiarow.none()
+            if data_od:
+                historia_cisnienia = historia_cisnienia.filter(
+                    data_pomiaru__date__gte=data_od
+                )
+                historia_cisnienia_r = historia_cisnienia_r.filter(
+                    data_pomiaru__date__gte=data_od
+                )
+            if data_do:
+                historia_cisnienia = historia_cisnienia.filter(
+                    data_pomiaru__date__lte=data_do
+                )
+                historia_cisnienia_r = historia_cisnienia_r.filter(
+                    data_pomiaru__date__lte=data_do
+                )
+        elif typ_filtr:
+            # Konkretny typ (glukoza / tetno)
+            historia_pomiarow = historia_pomiarow.filter(typ=typ_filtr)
+            historia_cisnienia = historia_cisnienia.none()
+            historia_cisnienia_r = historia_cisnienia_r.none()
+            if data_od:
+                historia_pomiarow = historia_pomiarow.filter(
+                    data_pomiaru__date__gte=data_od
+                )
+            if data_do:
+                historia_pomiarow = historia_pomiarow.filter(
+                    data_pomiaru__date__lte=data_do
+                )
+        else:
+            # Wszystkie typy + filtr daty
+            if data_od:
+                historia_pomiarow = historia_pomiarow.filter(
+                    data_pomiaru__date__gte=data_od
+                )
+                historia_cisnienia = historia_cisnienia.filter(
+                    data_pomiaru__date__gte=data_od
+                )
+                historia_cisnienia_r = historia_cisnienia_r.filter(
+                    data_pomiaru__date__gte=data_od
+                )
+            if data_do:
+                historia_pomiarow = historia_pomiarow.filter(
+                    data_pomiaru__date__lte=data_do
+                )
+                historia_cisnienia = historia_cisnienia.filter(
+                    data_pomiaru__date__lte=data_do
+                )
+                historia_cisnienia_r = historia_cisnienia_r.filter(
+                    data_pomiaru__date__lte=data_do
+                )
+
+    # ── Paginacja ─────────────────────────────────────────────────
+    # Łączymy pomiary i ciśnienia w jedną listę do paginacji
+    # Ciśnienia łączymy w pary (s, r) po dacie
+    WYNIKOW_NA_STRONE_DOMYSLNIE = 10
+    try:
+        wynikow_na_strone = int(request.GET.get('na_strone',
+                                                 WYNIKOW_NA_STRONE_DOMYSLNIE))
+        if wynikow_na_strone not in [5, 10, 20, 50]:
+            wynikow_na_strone = WYNIKOW_NA_STRONE_DOMYSLNIE
+    except (ValueError, TypeError):
+        wynikow_na_strone = WYNIKOW_NA_STRONE_DOMYSLNIE
+
+    paginator_pomiary = Paginator(historia_pomiarow, wynikow_na_strone)
+    paginator_cisnienia = Paginator(historia_cisnienia, wynikow_na_strone)
+
+    numer_strony = request.GET.get('strona', 1)
+    try:
+        strona_pomiarow = paginator_pomiary.page(numer_strony)
+        strona_cisnienia = paginator_cisnienia.page(numer_strony)
+    except (EmptyPage, PageNotAnInteger):
+        strona_pomiarow = paginator_pomiary.page(1)
+        strona_cisnienia = paginator_cisnienia.page(1)
+
+    # Ciśnienia rozkurczowe na tej samej stronie (po datach ze skurczowych)
+    daty_cisnienia_s = {p.data_pomiaru for p in strona_cisnienia.object_list}
+    cisnienia_r_strona = historia_cisnienia_r.filter(
+        data_pomiaru__in=daty_cisnienia_s
+    )
+
     # Funkcja pomocnicza do pobierania danych dla wykresów
     def pobierz_dane(typ):
         rekordy = Pomiar.objects.filter(
@@ -202,17 +303,15 @@ def pomiary(request):
     return render(request, 'monitor/pomiary.html', {
         'f_pomiar': FormularzPomiaru(),
         'f_samopoczucie': FormularzSamopoczucia(),
-        # Pomiary bez ciśnień i samopoczucia
-        'historia_pomiarow': pacjentka.pomiary.exclude(
-            typ__in=['samopoczucie', 'cisnienie_s', 'cisnienie_r']
-        ),
-        # Ciśnienia osobno – łączone w szablonie jako pary
-        'historia_cisnienia': pacjentka.pomiary.filter(
-            typ='cisnienie_s'
-        ).order_by('-data_pomiaru'),
-        'historia_cisnienia_r': pacjentka.pomiary.filter(
-            typ='cisnienie_r'
-        ).order_by('-data_pomiaru'),
+        'f_filtr': f_filtr,
+        # Paginowane wyniki
+        'historia_pomiarow': strona_pomiarow,
+        'historia_cisnienia': strona_cisnienia,
+        'historia_cisnienia_r': cisnienia_r_strona,
+        # Obiekty paginatora do kontrolki w szablonie
+        'paginator': paginator_pomiary,
+        'wynikow_na_strone': wynikow_na_strone,
+        # Samopoczucie bez paginacji (boczna kolumna)
         'historia_samopoczucia': pacjentka.pomiary.filter(
             typ='samopoczucie'
         ).order_by('-data_pomiaru')[:10],
@@ -517,14 +616,15 @@ def szczegoly_pdf(request, plik_id):
 @tylko_lekarz
 def panel_lekarza(request):
     komunikat = None
+    f_dodaj = FormularzDodajPacjentkePesel()
 
     if request.method == 'POST':
         akcja = request.POST.get('akcja')
 
         if akcja == 'dodaj_pacjentke':
-            f = FormularzDodajPacjentkePesel(request.POST)
-            if f.is_valid():
-                pesel = f.cleaned_data['pesel']
+            f_dodaj = FormularzDodajPacjentkePesel(request.POST)
+            if f_dodaj.is_valid():
+                pesel = f_dodaj.cleaned_data['pesel']
                 try:
                     pacjentka = Pacjentka.objects.get(pesel=pesel)
                     _, utworzono = PacjentkaLekarza.objects.get_or_create(
@@ -537,21 +637,61 @@ def panel_lekarza(request):
                         else 'Ta pacjentka jest już na Twojej liście!'
                     )
                 except Pacjentka.DoesNotExist:
-                    f.add_error('pesel',
+                    f_dodaj.add_error('pesel',
                                 'Nie znaleziono pacjentki z tym numerem PESEL!')
 
-            return render(request, 'monitor/panel_lekarza.html', {
-                'pacjentki': PacjentkaLekarza.objects.filter(
-                    lekarz=request.user.lekarz
-                ),
-                'f_dodaj_pacjentke': f,
-                'komunikat': komunikat,
-            })
+    # ── Filtrowanie ───────────────────────────────────────────────
+    f_filtr = FormularzFiltrowaniaPacjentek(request.GET or None)
+
+    pacjentki_qs = PacjentkaLekarza.objects.filter(
+        lekarz=request.user.lekarz
+    ).select_related('pacjentka__uzytkownik')
+
+    if f_filtr.is_valid():
+        szukaj = f_filtr.cleaned_data.get('szukaj')
+        porod_od = f_filtr.cleaned_data.get('porod_od')
+        porod_do = f_filtr.cleaned_data.get('porod_do')
+
+        if szukaj:
+            pacjentki_qs = pacjentki_qs.filter(
+                Q(pacjentka__uzytkownik__first_name__icontains=szukaj) |
+                Q(pacjentka__uzytkownik__last_name__icontains=szukaj) |
+                Q(pacjentka__pesel__icontains=szukaj)
+            ).distinct()
+        if porod_od:
+            pacjentki_qs = pacjentki_qs.filter(
+                pacjentka__przewidywana_data_porodu__gte=porod_od
+            )
+        if porod_do:
+            pacjentki_qs = pacjentki_qs.filter(
+                pacjentka__przewidywana_data_porodu__lte=porod_do
+            )
+
+    # ── Paginacja ─────────────────────────────────────────────────
+    WYNIKOW_NA_STRONE_DOMYSLNIE = 10
+    try:
+        wynikow_na_strone = int(request.GET.get('na_strone',
+                                                 WYNIKOW_NA_STRONE_DOMYSLNIE))
+        if wynikow_na_strone not in [5, 10, 20, 50]:
+            wynikow_na_strone = WYNIKOW_NA_STRONE_DOMYSLNIE
+    except (ValueError, TypeError):
+        wynikow_na_strone = WYNIKOW_NA_STRONE_DOMYSLNIE
+
+    paginator = Paginator(pacjentki_qs, wynikow_na_strone)
+    numer_strony = request.GET.get('strona', 1)
+    try:
+        strona = paginator.page(numer_strony)
+    except (EmptyPage, PageNotAnInteger):
+        strona = paginator.page(1)
 
     return render(request, 'monitor/panel_lekarza.html', {
-        'pacjentki': PacjentkaLekarza.objects.filter(lekarz=request.user.lekarz),
-        'f_dodaj_pacjentke': FormularzDodajPacjentkePesel(),
+        'pacjentki': strona,
+        'paginator': paginator,
+        'wynikow_na_strone': wynikow_na_strone,
+        'f_dodaj_pacjentke': f_dodaj,
+        'f_filtr': f_filtr,
         'komunikat': komunikat,
+        'liczba_wszystkich': pacjentki_qs.count(),
     })
 
 
@@ -578,12 +718,9 @@ def szczegoly_pacjentki(request, pacjentka_id):
             f = FormularzReceptyDlaPacjentki(request.POST)
             if f.is_valid():
                 recepta = f.save(commit=False)
-                
                 recepta.lekarz = request.user.lekarz
                 recepta.pacjentka = pacjentka
                 recepta.save()
-                # Przypisujemy receptę do tej konkretnej pacjentki
-                
                 return redirect('szczegoly_pacjentki',
                                 pacjentka_id=pacjentka_id)
 
@@ -596,6 +733,104 @@ def szczegoly_pacjentki(request, pacjentka_id):
                 wizyta.save()
                 return redirect('szczegoly_pacjentki',
                                 pacjentka_id=pacjentka_id)
+
+    # ── Filtrowanie pomiarów ──────────────────────────────────────
+    f_filtr = FormularzFiltrowaniaPomiarow(request.GET or None)
+
+    pomiary_qs = pacjentka.pomiary.exclude(
+        typ__in=['samopoczucie', 'cisnienie_s', 'cisnienie_r']
+    )
+    historia_cisnienia = pacjentka.pomiary.filter(
+        typ='cisnienie_s'
+    ).order_by('-data_pomiaru')
+    historia_cisnienia_r = pacjentka.pomiary.filter(
+        typ='cisnienie_r'
+    ).order_by('-data_pomiaru')
+
+    if f_filtr.is_valid():
+        typ_filtr = f_filtr.cleaned_data.get('typ')
+        data_od = f_filtr.cleaned_data.get('data_od')
+        data_do = f_filtr.cleaned_data.get('data_do')
+
+        if typ_filtr == 'cisnienie':
+            pomiary_qs = pomiary_qs.none()
+            if data_od:
+                historia_cisnienia = historia_cisnienia.filter(
+                    data_pomiaru__date__gte=data_od
+                )
+                historia_cisnienia_r = historia_cisnienia_r.filter(
+                    data_pomiaru__date__gte=data_od
+                )
+            if data_do:
+                historia_cisnienia = historia_cisnienia.filter(
+                    data_pomiaru__date__lte=data_do
+                )
+                historia_cisnienia_r = historia_cisnienia_r.filter(
+                    data_pomiaru__date__lte=data_do
+                )
+        elif typ_filtr == 'samopoczucie':
+            pomiary_qs = pomiary_qs.none()
+            historia_cisnienia = historia_cisnienia.none()
+            historia_cisnienia_r = historia_cisnienia_r.none()
+        elif typ_filtr:
+            pomiary_qs = pomiary_qs.filter(typ=typ_filtr)
+            historia_cisnienia = historia_cisnienia.none()
+            historia_cisnienia_r = historia_cisnienia_r.none()
+            if data_od:
+                pomiary_qs = pomiary_qs.filter(
+                    data_pomiaru__date__gte=data_od
+                )
+            if data_do:
+                pomiary_qs = pomiary_qs.filter(
+                    data_pomiaru__date__lte=data_do
+                )
+        else:
+            if data_od:
+                pomiary_qs = pomiary_qs.filter(
+                    data_pomiaru__date__gte=data_od
+                )
+                historia_cisnienia = historia_cisnienia.filter(
+                    data_pomiaru__date__gte=data_od
+                )
+                historia_cisnienia_r = historia_cisnienia_r.filter(
+                    data_pomiaru__date__gte=data_od
+                )
+            if data_do:
+                pomiary_qs = pomiary_qs.filter(
+                    data_pomiaru__date__lte=data_do
+                )
+                historia_cisnienia = historia_cisnienia.filter(
+                    data_pomiaru__date__lte=data_do
+                )
+                historia_cisnienia_r = historia_cisnienia_r.filter(
+                    data_pomiaru__date__lte=data_do
+                )
+
+    # ── Paginacja ─────────────────────────────────────────────────
+    WYNIKOW_NA_STRONE_DOMYSLNIE = 10
+    try:
+        wynikow_na_strone = int(request.GET.get('na_strone',
+                                                 WYNIKOW_NA_STRONE_DOMYSLNIE))
+        if wynikow_na_strone not in [5, 10, 20, 50]:
+            wynikow_na_strone = WYNIKOW_NA_STRONE_DOMYSLNIE
+    except (ValueError, TypeError):
+        wynikow_na_strone = WYNIKOW_NA_STRONE_DOMYSLNIE
+
+    paginator_pomiary = Paginator(pomiary_qs, wynikow_na_strone)
+    paginator_cisnienia = Paginator(historia_cisnienia, wynikow_na_strone)
+
+    numer_strony = request.GET.get('strona', 1)
+    try:
+        strona_pomiarow = paginator_pomiary.page(numer_strony)
+        strona_cisnienia = paginator_cisnienia.page(numer_strony)
+    except (EmptyPage, PageNotAnInteger):
+        strona_pomiarow = paginator_pomiary.page(1)
+        strona_cisnienia = paginator_cisnienia.page(1)
+
+    daty_cisnienia_s = {p.data_pomiaru for p in strona_cisnienia.object_list}
+    cisnienia_r_strona = historia_cisnienia_r.filter(
+        data_pomiaru__in=daty_cisnienia_s
+    )
 
     # Funkcja pomocnicza do pobierania danych dla wykresów
     def pobierz_dane(typ):
@@ -611,17 +846,14 @@ def szczegoly_pacjentki(request, pacjentka_id):
         'pacjentka': pacjentka,
         'f_recepta': FormularzReceptyDlaPacjentki(),
         'f_wizyta': FormularzWizytyDlaPacjentki(),
-        # Pomiary bez ciśnień i samopoczucia
-        'pomiary': pacjentka.pomiary.exclude(
-            typ__in=['samopoczucie', 'cisnienie_s', 'cisnienie_r']
-        ),
-        # Ciśnienia osobno – łączone w szablonie jako pary
-        'historia_cisnienia': pacjentka.pomiary.filter(
-            typ='cisnienie_s'
-        ).order_by('-data_pomiaru'),
-        'historia_cisnienia_r': pacjentka.pomiary.filter(
-            typ='cisnienie_r'
-        ).order_by('-data_pomiaru'),
+        'f_filtr': f_filtr,
+        # Paginowane pomiary
+        'pomiary': strona_pomiarow,
+        'historia_cisnienia': strona_cisnienia,
+        'historia_cisnienia_r': cisnienia_r_strona,
+        'paginator': paginator_pomiary,
+        'wynikow_na_strone': wynikow_na_strone,
+        # Samopoczucie bez paginacji
         'historia_samopoczucia': pacjentka.pomiary.filter(
             typ='samopoczucie'
         ).order_by('-data_pomiaru'),

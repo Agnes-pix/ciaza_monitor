@@ -326,7 +326,66 @@ class FormularzDodajPacjentkePesel(forms.Form):
         if len(pesel) != 11:
             raise forms.ValidationError('PESEL musi mieć dokładnie 11 cyfr!')
         return pesel
-    
+
+
+# ================================================================
+# FORMULARZ 11 – Filtrowanie pomiarów
+# Używany na stronie /pomiary/ oraz w szczegółach pacjentki
+# Pola: typ pomiaru (select) oraz zakres dat (date)
+# Dane przechowywane w GET (pasku adresu)
+# ================================================================
+class FormularzFiltrowaniaPomiarow(forms.Form):
+    TYPY_FILTR = [
+        ('', 'Wszystkie typy'),
+        ('glukoza', 'Poziom glukozy'),
+        ('cisnienie', 'Ciśnienie krwi'),
+        ('tetno', 'Tętno'),
+        ('samopoczucie', 'Samopoczucie'),
+    ]
+
+    typ = forms.ChoiceField(
+        choices=TYPY_FILTR,
+        required=False,
+        label='Rodzaj pomiaru',
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+    data_od = forms.DateField(
+        required=False,
+        label='Data od',
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'})
+    )
+    data_do = forms.DateField(
+        required=False,
+        label='Data do',
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'})
+    )
+
+
+# ================================================================
+# FORMULARZ 12 – Filtrowanie pacjentek (panel lekarza)
+# Pola: fragment nazwiska/imienia (text) oraz termin porodu (date)
+# Dane przechowywane w GET (pasku adresu)
+# ================================================================
+class FormularzFiltrowaniaPacjentek(forms.Form):
+    szukaj = forms.CharField(
+        required=False,
+        label='Imię, nazwisko lub PESEL',
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'np. Kowalska lub 12345...',
+        })
+    )
+    porod_od = forms.DateField(
+        required=False,
+        label='Termin porodu od',
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'})
+    )
+    porod_do = forms.DateField(
+        required=False,
+        label='Termin porodu do',
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'})
+    )
+
 
 
 # ================================================================
