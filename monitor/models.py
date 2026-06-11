@@ -45,7 +45,7 @@ class Lekarz(models.Model):
     )
     miejsce_pracy = models.CharField(max_length=200, blank=True)
     specjalizacja = models.CharField(max_length=100, blank=True)
-    telefon = models.CharField(max_length=20, blank=True)
+    telefon = models.CharField(max_length=20, blank=False)
 
     def __str__(self):
         return f"Dr {self.uzytkownik.first_name} {self.uzytkownik.last_name}"

@@ -141,6 +141,22 @@ class FormularzDaneLekarz(forms.ModelForm):
 # ================================================================
 class FormularzPomiaru(forms.ModelForm):
     # Dodatkowe pole tylko dla ciśnienia
+    TYPY_CHOICES = [
+        ('', '– wybierz typ –'),
+        ('glukoza', 'Poziom glukozy (mg/dL)'),
+        ('cisnienie', 'Ciśnienie krwi (mmHg)'),
+        ('tetno', 'Tętno (uderzenia/min)'),
+    ]
+    
+    typ = forms.ChoiceField(
+        choices=TYPY_CHOICES,
+        label='Rodzaj pomiaru',
+        widget=forms.Select(attrs={
+            'class': 'form-select',
+            'id': 'id_typ'
+        })
+    )
+
     cisnienie = forms.CharField(
         required=False,
         label='Ciśnienie krwi',
@@ -155,10 +171,10 @@ class FormularzPomiaru(forms.ModelForm):
         model = Pomiar
         fields = ['typ', 'wartosc', 'data_pomiaru']
         widgets = {
-            'typ': forms.Select(attrs={
-                'class': 'form-select',
-                'id': 'id_typ'
-            }),
+            # 'typ': forms.Select(attrs={
+            #     'class': 'form-select',
+            #     'id': 'id_typ'
+            # }),
             'wartosc': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'step': '0.1',
