@@ -62,6 +62,9 @@ class FormularzDanePacjentki(forms.ModelForm):
             'przewidywana_data_porodu': forms.DateInput(
                 attrs={'type': 'date'}
             ),
+            'telefon': forms.TextInput(attrs={
+                'placeholder': 'np. 500 600 700'
+            }),
         }
         labels = {
             'pesel': 'Numer PESEL',

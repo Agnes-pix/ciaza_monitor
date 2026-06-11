@@ -5,26 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Monitor Ciąży{% endblock %}</title>
 
-    <!--
-        {% load static %} = mówi Django że używamy plików statycznych
-        MUSI być na początku każdego szablonu używającego % static %
-    -->
     {% load static %}
 
-    <!--
-        {% static 'ścieżka' %} = Django zamienia to na pełny URL
-        np. /static/monitor/css/bootstrap.min.css
-        Pliki są serwowane Z NASZEGO SERWERA – nie z internetu!
-    -->
     <link rel="stylesheet" href="{% static 'monitor/css/bootstrap.min.css' %}">
     <link rel="stylesheet" href="{% static 'monitor/css/bootstrap-icons.min.css' %}">
-
-   
-    <link rel="stylesheet" href="{% static 'monitor/css/bootstrap.min.css' %}">
-    <link rel="stylesheet" href="{% static 'monitor/css/bootstrap-icons.min.css' %}">
-
-    <!-- Nasz własny plik stylów – ładowany po Bootstrap -->
-    <!-- Dzięki temu możemy nadpisywać style Bootstrap -->
     <link rel="stylesheet" href="{% static 'monitor/css/style.css' %}">
 </head>
 <body>
@@ -36,7 +20,6 @@
             <i class="bi bi-heart-pulse-fill me-2"></i>Monitor Ciąży
         </span>
 
-        <!-- Przycisk hamburger na telefonie -->
         <button class="navbar-toggler" type="button"
                 data-bs-toggle="collapse" data-bs-target="#nawigacja">
             <span class="navbar-toggler-icon"></span>
@@ -45,22 +28,26 @@
         <div class="collapse navbar-collapse" id="nawigacja">
             <div class="navbar-nav me-auto">
                 {% if not user.is_staff %}
-                    <!-- Zakładki pacjentki -->
-                    <a class="nav-link" href="{% url 'dashboard' %}">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
+                       href="{% url 'dashboard' %}">
                         <i class="bi bi-house-fill me-1"></i>Strona główna
                     </a>
-                    <a class="nav-link" href="{% url 'pomiary' %}">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'pomiary' %}active{% endif %}"
+                       href="{% url 'pomiary' %}">
                         <i class="bi bi-clipboard2-pulse me-1"></i>Moje dane
                     </a>
+                    <a class="nav-link {% if request.resolver_match.url_name == 'badania_pdf' %}active{% endif %}"
+                       href="{% url 'badania_pdf' %}">
+                        <i class="bi bi-file-earmark-medical me-1"></i>Wyniki badań
+                    </a>
                 {% else %}
-                    <!-- Zakładka lekarza -->
-                    <a class="nav-link" href="{% url 'panel_lekarza' %}">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'panel_lekarza' %}active{% endif %}"
+                       href="{% url 'panel_lekarza' %}">
                         <i class="bi bi-hospital me-1"></i>Panel lekarza
                     </a>
                 {% endif %}
             </div>
 
-            <!-- Użytkownik i wyloguj -->
             <div class="navbar-nav ms-auto align-items-center">
                 <span class="navbar-text text-white me-3">
                     <i class="bi bi-person-circle me-1"></i>
@@ -79,12 +66,7 @@
     {% block content %}{% endblock %}
 </div>
 
-<!--
-    Bootstrap JS na końcu body – przyspiesza ładowanie strony
-    bundle = zawiera Popper.js (potrzebny do menu, tooltipów)
--->
 <script src="{% static 'monitor/js/bootstrap.bundle.min.js' %}"></script>
-
 <script src="{% static 'monitor/js/chart.umd.min.js' %}"></script>
 <script src="{% static 'monitor/js/aplikacja.js' %}"></script>
 

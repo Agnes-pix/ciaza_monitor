@@ -22,7 +22,7 @@
                 <form method="POST" id="formularz-rejestracji">
                     {% csrf_token %}
 
-                    <!-- KROK 1: Wybór roli – przyciski radio -->
+                    <!-- KROK 1: Wybór roli -->
                     <div class="mb-4">
                         <label class="form-label fw-semibold">
                             <i class="bi bi-person-badge me-1"></i>
@@ -35,7 +35,8 @@
                                        name="rola"
                                        id="rola-pacjentka"
                                        value="pacjentka"
-                                       autocomplete="off">
+                                       autocomplete="off"
+                                       {% if f_user.data.rola == 'pacjentka' %}checked{% endif %}>
                                 <label class="btn btn-outline-danger w-100 py-3"
                                        for="rola-pacjentka">
                                     <i class="bi bi-heart-pulse d-block mb-1"
@@ -49,7 +50,8 @@
                                        name="rola"
                                        id="rola-lekarz"
                                        value="lekarz"
-                                       autocomplete="off">
+                                       autocomplete="off"
+                                       {% if f_user.data.rola == 'lekarz' %}checked{% endif %}>
                                 <label class="btn btn-outline-primary w-100 py-3"
                                        for="rola-lekarz">
                                     <i class="bi bi-hospital d-block mb-1"
@@ -60,17 +62,14 @@
                         </div>
                     </div>
 
-                    <!-- KROK 2: Dane konta – pojawia się po wyborze roli -->
-                    <div id="sekcja-dane-konta" style="display:none;">
+                    <!-- KROK 2: Dane konta -->
+                    <div id="sekcja-dane-konta"
+                         {% if not f_user.data.rola %}style="display:none;"{% endif %}>
                         <hr>
                         <h5 class="mb-3">
                             <i class="bi bi-key-fill me-2 text-secondary"></i>
                             Dane konta
                         </h5>
-                        <!--
-                            Pomijamy pole 'rola' w pętli bo jest już
-                            wyświetlone jako przyciski radio powyżej
-                        -->
                         {% for pole in f_user %}
                             {% if pole.name != 'rola' %}
                             <div class="mb-3">
@@ -90,7 +89,8 @@
                     </div>
 
                     <!-- KROK 3a: Dane medyczne pacjentki -->
-                    <div id="dane-pacjentki" style="display:none;">
+                    <div id="dane-pacjentki"
+                         {% if f_user.data.rola != 'pacjentka' %}style="display:none;"{% endif %}>
                         <hr>
                         <h5 class="mb-3">
                             <i class="bi bi-clipboard2-heart me-2 text-danger"></i>
@@ -112,7 +112,8 @@
                     </div>
 
                     <!-- KROK 3b: Dane zawodowe lekarza -->
-                    <div id="dane-lekarza" style="display:none;">
+                    <div id="dane-lekarza"
+                         {% if f_user.data.rola != 'lekarz' %}style="display:none;"{% endif %}>
                         <hr>
                         <h5 class="mb-3">
                             <i class="bi bi-hospital me-2 text-primary"></i>
@@ -133,8 +134,9 @@
                         {% endfor %}
                     </div>
 
-                    <!-- Przycisk pojawia się dopiero po wyborze roli -->
-                    <div id="przycisk-rejestracji" style="display:none;">
+                    <!-- Przycisk rejestracji -->
+                    <div id="przycisk-rejestracji"
+                         {% if not f_user.data.rola %}style="display:none;"{% endif %}>
                         <button type="submit"
                                 class="btn btn-rozowy w-100 mt-3 py-2">
                             <i class="bi bi-check-circle-fill me-2"></i>
@@ -171,6 +173,19 @@ function ustawWymagane(pola, czyWymagane) {
     });
 }
 
+// Ustaw required dla pól już widocznych po powrocie z błędu
+const rolaAktywna = document.querySelector('input[name="rola"]:checked');
+if (rolaAktywna) {
+    if (rolaAktywna.value === 'pacjentka') {
+        ustawWymagane(polaPacjentki, true);
+        ustawWymagane(polaLekarza, false);
+    } else {
+        ustawWymagane(polaLekarza, true);
+        ustawWymagane(polaPacjentki, false);
+    }
+}
+
+// Obsługa kliknięcia roli
 document.querySelectorAll('input[name="rola"]').forEach(function(radio) {
     radio.addEventListener('change', function() {
         document.getElementById('sekcja-dane-konta').style.display = 'block';

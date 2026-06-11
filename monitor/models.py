@@ -70,7 +70,7 @@ class Lekarz(models.Model):
 # w formacie 120/80 i rozdzielane na dwa rekordy w bazie
 # ================================================================
 class Pomiar(models.Model):
-    # Typy wyświetlane użytkownikowi w formularzu
+    # Typy wyświetlane użytkownikowi w formularzu dodawania pomiaru
     TYPY_POMIAROW = [
         ('glukoza', 'Poziom glukozy (mg/dL)'),
         ('cisnienie', 'Ciśnienie krwi (mmHg)'),
@@ -85,13 +85,17 @@ class Pomiar(models.Model):
         (5, '😊 Bardzo dobre'),
     ]
 
+    # Wszystkie typy jakie mogą trafić do bazy – używane przez get_typ_nazwa()
+    # Pacjentka wybiera 'cisnienie' w formularzu, ale w bazie zapisywane są
+    # dwa osobne rekordy: 'cisnienie_s' i 'cisnienie_r' – dzięki temu
+    # wykres może rysować dwie osobne linie na jednym układzie współrzędnych
     WSZYSTKIE_TYPY = {
-    'glukoza': 'Poziom glukozy (mg/dL)',
-    'cisnienie': 'Ciśnienie krwi (mmHg)',
-    'cisnienie_s': 'Ciśnienie skurczowe (mmHg)',
-    'cisnienie_r': 'Ciśnienie rozkurczowe (mmHg)',
-    'tetno': 'Tętno (uderzenia/min)',
-    'samopoczucie': 'Samopoczucie',
+        'glukoza': 'Poziom glukozy (mg/dL)',
+        'cisnienie': 'Ciśnienie krwi (mmHg)',
+        'cisnienie_s': 'Ciśnienie skurczowe (mmHg)',
+        'cisnienie_r': 'Ciśnienie rozkurczowe (mmHg)',
+        'tetno': 'Tętno (uderzenia/min)',
+        'samopoczucie': 'Samopoczucie',
     }
 
     pacjentka = models.ForeignKey(
@@ -99,15 +103,22 @@ class Pomiar(models.Model):
         on_delete=models.CASCADE,
         related_name='pomiary'
     )
-    # typ przechowuje wartości z TYPY_POMIAROW oraz
-    # 'cisnienie_s', 'cisnienie_r', 'samopoczucie' – wewnętrzne typy
+    # typ przechowuje wartości widoczne użytkownikowi (TYPY_POMIAROW)
+    # oraz wewnętrzne typy zapisywane przez widok:
+    # 'cisnienie_s' – skurczowe (pierwsza liczba z formatu 120/80)
+    # 'cisnienie_r' – rozkurczowe (druga liczba z formatu 120/80)
+    # 'samopoczucie' – wpis z formularza samopoczucia
+    # choices celowo nie jest ustawione – Django nie waliduje pola
+    # przy zapisie przez kod, a WSZYSTKIE_TYPY służy do wyświetlania nazw
     typ = models.CharField(
-    max_length=20,
-    choices=TYPY_POMIAROW,
-    blank=True
+        max_length=20,
+        blank=True
     )
     wartosc = models.FloatField()
     data_pomiaru = models.DateTimeField()
+    # samopoczucie przechowuje wartość 1-5 z formularza samopoczucia
+    # dla wpisów samopoczucia ta sama wartość trafia też do pola wartosc
+    # (wymagane przez FloatField) – wartosc nie jest używana dla samopoczucia
     samopoczucie = models.IntegerField(
         choices=SAMOPOCZUCIE_WYBORY,
         null=True,
@@ -164,8 +175,8 @@ class WizytaLekarska(models.Model):
 # ================================================================
 # MODEL 4 – Recepta
 # Recepta wypisana przez lekarza dla pacjentki
-# Relacja: wiele Recept może być przypisanych do wielu Pacjentek
-# (ManyToMany) – jedna recepta może dotyczyć wielu pacjentek
+# Relacja: wiele Recept należy do jednej Pacjentki (ForeignKey)
+# Relacja: wiele Recept należy do jednego Lekarza (ForeignKey)
 # ================================================================
 class Recepta(models.Model):
     lekarz = models.ForeignKey(

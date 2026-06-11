@@ -7,10 +7,12 @@
     <i class="bi bi-hospital-fill me-2"></i>Panel lekarza
 </h3>
 
-<div class="row">
+<!-- GÓRNY RZĄD: Dodaj pacjentkę + Filtruj -->
+<div class="row mb-4">
+
     <!-- Formularz dodawania pacjentki po PESEL -->
-    <div class="col-md-5">
-        <div class="card mb-4">
+    <div class="col-md-6 mb-3 mb-md-0">
+        <div class="card h-100">
             <div class="card-header fw-bold text-white"
                  style="background: linear-gradient(135deg, #880e4f, #e91e8c);">
                 <i class="bi bi-person-plus-fill me-2"></i>Dodaj pacjentkę
@@ -39,9 +41,8 @@
                         <i class="bi bi-search me-2"></i>Znajdź i dodaj pacjentkę
                     </button>
                 </form>
-
                 {% if komunikat %}
-                    <div class="alert alert-info mt-3">
+                    <div class="alert alert-info mt-3 mb-0">
                         <i class="bi bi-info-circle me-1"></i>{{ komunikat }}
                     </div>
                 {% endif %}
@@ -49,22 +50,21 @@
         </div>
     </div>
 
-    <!-- Lista moich pacjentek -->
-    <div class="col-md-7">
-        <!-- Formularz filtrowania -->
-        <div class="card mb-3">
+    <!-- Formularz filtrowania -->
+    <div class="col-md-6">
+        <div class="card h-100">
             <div class="card-header fw-bold">
                 <i class="bi bi-funnel-fill me-2"></i>Filtruj pacjentki
             </div>
             <div class="card-body">
                 <form method="GET" action="{% url 'panel_lekarza' %}">
-                    <div class="row g-2">
-                        <div class="col-12">
-                            <label class="form-label fw-semibold small">
-                                {{ f_filtr.szukaj.label }}
-                            </label>
-                            {{ f_filtr.szukaj }}
-                        </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">
+                            {{ f_filtr.szukaj.label }}
+                        </label>
+                        {{ f_filtr.szukaj }}
+                    </div>
+                    <div class="row g-2 mb-3">
                         <div class="col-6">
                             <label class="form-label fw-semibold small">
                                 {{ f_filtr.porod_od.label }}
@@ -78,7 +78,7 @@
                             {{ f_filtr.porod_do }}
                         </div>
                     </div>
-                    <div class="d-flex gap-2 mt-3">
+                    <div class="d-flex gap-2">
                         <button type="submit" class="btn btn-primary btn-sm">
                             <i class="bi bi-search me-1"></i>Szukaj
                         </button>
@@ -89,124 +89,144 @@
                 </form>
             </div>
         </div>
+    </div>
 
-        <div class="card">
-            <div class="card-header fw-bold">
-                <i class="bi bi-people-fill me-2"></i>Moje pacjentki
-                <span class="badge bg-secondary float-end">
-                    {{ liczba_wszystkich }}
-                </span>
-            </div>
-            <ul class="list-group list-group-flush">
+</div>
+
+<!-- DOLNY RZĄD: Lista pacjentek -->
+<div class="card">
+    <div class="card-header fw-bold">
+        <i class="bi bi-people-fill me-2"></i>Moje pacjentki
+        <span class="badge bg-secondary float-end">{{ liczba_wszystkich }}</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Pacjentka</th>
+                    <th>PESEL</th>
+                    <th>Termin porodu</th>
+                    <th>Telefon</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
                 {% for relacja in pacjentki %}
-                <li class="list-group-item pacjentka-item">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <i class="bi bi-person-circle me-1 text-primary"></i>
-                            <strong>{{ relacja.pacjentka }}</strong><br>
-                            <small class="text-muted">
-                                <i class="bi bi-credit-card me-1"></i>
-                                PESEL: {{ relacja.pacjentka.pesel }}
-                            </small><br>
-                            <small class="text-muted">
-                                <i class="bi bi-calendar-heart me-1"></i>
-                                Termin porodu: {{ relacja.pacjentka.przewidywana_data_porodu }}
-                            </small>
-                        </div>
+                <tr>
+                    <td>
+                        <i class="bi bi-person-circle me-1 text-primary"></i>
+                        <strong>{{ relacja.pacjentka }}</strong>
+                    </td>
+                    <td>
+                        <small class="text-muted">{{ relacja.pacjentka.pesel }}</small>
+                    </td>
+                    <td>
+                        <i class="bi bi-calendar-heart me-1 text-danger"></i>
+                        {{ relacja.pacjentka.przewidywana_data_porodu }}
+                    </td>
+                    <td>
+                        <small class="text-muted">
+                            {% if relacja.pacjentka.telefon %}
+                                <i class="bi bi-telephone me-1"></i>{{ relacja.pacjentka.telefon }}
+                            {% else %}
+                                —
+                            {% endif %}
+                        </small>
+                    </td>
+                    <td class="text-end">
                         <a href="{% url 'szczegoly_pacjentki' relacja.pacjentka.id %}"
                            class="btn btn-primary btn-sm">
                             <i class="bi bi-eye me-1"></i>Szczegóły
                         </a>
-                    </div>
-                </li>
+                    </td>
+                </tr>
                 {% empty %}
-                <li class="list-group-item text-muted text-center py-5">
-                    <i class="bi bi-person-x d-block mb-2" style="font-size:2.5rem"></i>
-                    Brak pacjentek na liście.<br>
-                    <small>Dodaj pacjentkę wpisując jej PESEL po lewej.</small>
-                </li>
+                <tr>
+                    <td colspan="5" class="text-center text-muted py-5">
+                        <i class="bi bi-person-x d-block mb-2" style="font-size:2.5rem"></i>
+                        Brak pacjentek na liście.<br>
+                        <small>Dodaj pacjentkę wpisując jej PESEL powyżej.</small>
+                    </td>
+                </tr>
                 {% endfor %}
-            </ul>
-
-            <!-- Kontrolka paginacji -->
-            {% if pacjentki.paginator.num_pages > 1 %}
-            <div class="card-footer">
-                <!-- Wybór liczby wyników na stronę -->
-                <form method="GET" action="{% url 'panel_lekarza' %}" class="d-flex align-items-center gap-2 mb-2 flex-wrap">
-                    {% if request.GET.szukaj %}<input type="hidden" name="szukaj" value="{{ request.GET.szukaj }}">{% endif %}
-                    {% if request.GET.porod_od %}<input type="hidden" name="porod_od" value="{{ request.GET.porod_od }}">{% endif %}
-                    {% if request.GET.porod_do %}<input type="hidden" name="porod_do" value="{{ request.GET.porod_do }}">{% endif %}
-                    <label class="form-label mb-0 small fw-semibold">Wyników na stronę:</label>
-                    <select name="na_strone" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
-                    <option value="5"  {% if wynikow_na_strone == 5  %}selected{% endif %}>5</option>
-                    <option value="10" {% if wynikow_na_strone == 10 %}selected{% endif %}>10</option>
-                    <option value="20" {% if wynikow_na_strone == 20 %}selected{% endif %}>20</option>
-                    <option value="50" {% if wynikow_na_strone == 50 %}selected{% endif %}>50</option>
-                    </select>
-                    <span class="text-muted small">
-                        Strona {{ pacjentki.number }} z {{ pacjentki.paginator.num_pages }}
-                    </span>
-                </form>
-
-                <!-- Przyciski stron -->
-                <nav>
-                    <ul class="pagination pagination-sm mb-0 flex-wrap">
-                        {% if pacjentki.has_previous %}
-                        <li class="page-item">
-                            <a class="page-link" href="?{% if request.GET.szukaj %}szukaj={{ request.GET.szukaj }}&{% endif %}{% if request.GET.porod_od %}porod_od={{ request.GET.porod_od }}&{% endif %}{% if request.GET.porod_do %}porod_do={{ request.GET.porod_do }}&{% endif %}na_strone={{ wynikow_na_strone }}&strona=1">
-                                <i class="bi bi-chevron-double-left"></i>
-                            </a>
-                        </li>
-                        <li class="page-item">
-                            <a class="page-link" href="?{% if request.GET.szukaj %}szukaj={{ request.GET.szukaj }}&{% endif %}{% if request.GET.porod_od %}porod_od={{ request.GET.porod_od }}&{% endif %}{% if request.GET.porod_do %}porod_do={{ request.GET.porod_do }}&{% endif %}na_strone={{ wynikow_na_strone }}&strona={{ pacjentki.previous_page_number }}">
-                                <i class="bi bi-chevron-left"></i>
-                            </a>
-                        </li>
-                        {% endif %}
-
-                        {% for num in pacjentki.paginator.page_range %}
-                            {% if num == pacjentki.number %}
-                            <li class="page-item active">
-                                <span class="page-link">{{ num }}</span>
-                            </li>
-                            {% elif num >= pacjentki.number|add:"-2" and num <= pacjentki.number|add:"2" %}
-                            <li class="page-item">
-                                <a class="page-link" href="?{% if request.GET.szukaj %}szukaj={{ request.GET.szukaj }}&{% endif %}{% if request.GET.porod_od %}porod_od={{ request.GET.porod_od }}&{% endif %}{% if request.GET.porod_do %}porod_do={{ request.GET.porod_do }}&{% endif %}na_strone={{ wynikow_na_strone }}&strona={{ num }}">{{ num }}</a>
-                            </li>
-                            {% endif %}
-                        {% endfor %}
-
-                        {% if pacjentki.has_next %}
-                        <li class="page-item">
-                            <a class="page-link" href="?{% if request.GET.szukaj %}szukaj={{ request.GET.szukaj }}&{% endif %}{% if request.GET.porod_od %}porod_od={{ request.GET.porod_od }}&{% endif %}{% if request.GET.porod_do %}porod_do={{ request.GET.porod_do }}&{% endif %}na_strone={{ wynikow_na_strone }}&strona={{ pacjentki.next_page_number }}">
-                                <i class="bi bi-chevron-right"></i>
-                            </a>
-                        </li>
-                        <li class="page-item">
-                            <a class="page-link" href="?{% if request.GET.szukaj %}szukaj={{ request.GET.szukaj }}&{% endif %}{% if request.GET.porod_od %}porod_od={{ request.GET.porod_od }}&{% endif %}{% if request.GET.porod_do %}porod_do={{ request.GET.porod_do }}&{% endif %}na_strone={{ wynikow_na_strone }}&strona={{ pacjentki.paginator.num_pages }}">
-                                <i class="bi bi-chevron-double-right"></i>
-                            </a>
-                        </li>
-                        {% endif %}
-                    </ul>
-                </nav>
-
-                <!-- Skok do strony -->
-                <form method="GET" action="{% url 'panel_lekarza' %}" class="d-flex align-items-center gap-2 mt-2">
-                    {% if request.GET.szukaj %}<input type="hidden" name="szukaj" value="{{ request.GET.szukaj }}">{% endif %}
-                    {% if request.GET.porod_od %}<input type="hidden" name="porod_od" value="{{ request.GET.porod_od }}">{% endif %}
-                    {% if request.GET.porod_do %}<input type="hidden" name="porod_do" value="{{ request.GET.porod_do }}">{% endif %}
-                    <input type="hidden" name="na_strone" value="{{ wynikow_na_strone }}">
-                    <label class="form-label mb-0 small">Przejdź do strony:</label>
-                    <input type="number" name="strona" class="form-control form-control-sm"
-                           style="width:70px" min="1" max="{{ pacjentki.paginator.num_pages }}"
-                           value="{{ pacjentki.number }}">
-                    <button type="submit" class="btn btn-outline-primary btn-sm">OK</button>
-                </form>
-            </div>
-            {% endif %}
-
-        </div>
+            </tbody>
+        </table>
     </div>
+
+    <!-- Kontrolka paginacji -->
+    {% if pacjentki.paginator.num_pages > 1 %}
+    <div class="card-footer">
+        <form method="GET" action="{% url 'panel_lekarza' %}" class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+            {% if request.GET.szukaj %}<input type="hidden" name="szukaj" value="{{ request.GET.szukaj }}">{% endif %}
+            {% if request.GET.porod_od %}<input type="hidden" name="porod_od" value="{{ request.GET.porod_od }}">{% endif %}
+            {% if request.GET.porod_do %}<input type="hidden" name="porod_do" value="{{ request.GET.porod_do }}">{% endif %}
+            <label class="form-label mb-0 small fw-semibold">Wyników na stronę:</label>
+            <select name="na_strone" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+                <option value="5"  {% if wynikow_na_strone == 5  %}selected{% endif %}>5</option>
+                <option value="10" {% if wynikow_na_strone == 10 %}selected{% endif %}>10</option>
+                <option value="20" {% if wynikow_na_strone == 20 %}selected{% endif %}>20</option>
+                <option value="50" {% if wynikow_na_strone == 50 %}selected{% endif %}>50</option>
+            </select>
+            <span class="text-muted small">
+                Strona {{ pacjentki.number }} z {{ pacjentki.paginator.num_pages }}
+            </span>
+        </form>
+
+        <nav>
+            <ul class="pagination pagination-sm mb-0 flex-wrap">
+                {% if pacjentki.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?{% if request.GET.szukaj %}szukaj={{ request.GET.szukaj }}&{% endif %}{% if request.GET.porod_od %}porod_od={{ request.GET.porod_od }}&{% endif %}{% if request.GET.porod_do %}porod_do={{ request.GET.porod_do }}&{% endif %}na_strone={{ wynikow_na_strone }}&strona=1">
+                        <i class="bi bi-chevron-double-left"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?{% if request.GET.szukaj %}szukaj={{ request.GET.szukaj }}&{% endif %}{% if request.GET.porod_od %}porod_od={{ request.GET.porod_od }}&{% endif %}{% if request.GET.porod_do %}porod_do={{ request.GET.porod_do }}&{% endif %}na_strone={{ wynikow_na_strone }}&strona={{ pacjentki.previous_page_number }}">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+                {% endif %}
+
+                {% for num in pacjentki.paginator.page_range %}
+                    {% if num == pacjentki.number %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                    {% elif num >= pacjentki.number|add:"-2" and num <= pacjentki.number|add:"2" %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% if request.GET.szukaj %}szukaj={{ request.GET.szukaj }}&{% endif %}{% if request.GET.porod_od %}porod_od={{ request.GET.porod_od }}&{% endif %}{% if request.GET.porod_do %}porod_do={{ request.GET.porod_do }}&{% endif %}na_strone={{ wynikow_na_strone }}&strona={{ num }}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if pacjentki.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?{% if request.GET.szukaj %}szukaj={{ request.GET.szukaj }}&{% endif %}{% if request.GET.porod_od %}porod_od={{ request.GET.porod_od }}&{% endif %}{% if request.GET.porod_do %}porod_do={{ request.GET.porod_do }}&{% endif %}na_strone={{ wynikow_na_strone }}&strona={{ pacjentki.next_page_number }}">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?{% if request.GET.szukaj %}szukaj={{ request.GET.szukaj }}&{% endif %}{% if request.GET.porod_od %}porod_od={{ request.GET.porod_od }}&{% endif %}{% if request.GET.porod_do %}porod_do={{ request.GET.porod_do }}&{% endif %}na_strone={{ wynikow_na_strone }}&strona={{ pacjentki.paginator.num_pages }}">
+                        <i class="bi bi-chevron-double-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+
+        <form method="GET" action="{% url 'panel_lekarza' %}" class="d-flex align-items-center gap-2 mt-2">
+            {% if request.GET.szukaj %}<input type="hidden" name="szukaj" value="{{ request.GET.szukaj }}">{% endif %}
+            {% if request.GET.porod_od %}<input type="hidden" name="porod_od" value="{{ request.GET.porod_od }}">{% endif %}
+            {% if request.GET.porod_do %}<input type="hidden" name="porod_do" value="{{ request.GET.porod_do }}">{% endif %}
+            <input type="hidden" name="na_strone" value="{{ wynikow_na_strone }}">
+            <label class="form-label mb-0 small">Przejdź do strony:</label>
+            <input type="number" name="strona" class="form-control form-control-sm"
+                   style="width:70px" min="1" max="{{ pacjentki.paginator.num_pages }}"
+                   value="{{ pacjentki.number }}">
+            <button type="submit" class="btn btn-outline-primary btn-sm">OK</button>
+        </form>
+    </div>
+    {% endif %}
+
 </div>
 {% endblock %}

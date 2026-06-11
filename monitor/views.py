@@ -597,16 +597,16 @@ def usun_pdf(request, plik_id):
     })
 
 
-# ================================================================
-# WIDOK – Szczegóły wgranego pliku PDF
-# Pokazuje tekst wyciągnięty z pliku PDF
-# ================================================================
-@tylko_pacjentka
-def szczegoly_pdf(request, plik_id):
-    pacjentka = request.user.pacjentka
-    # get_object_or_404 sprawdza że plik należy do tej pacjentki
-    plik = get_object_or_404(PlikBadan, id=plik_id, pacjentka=pacjentka)
-    return render(request, 'monitor/szczegoly_pdf.html', {'plik': plik})
+# # ================================================================
+# # WIDOK – Szczegóły wgranego pliku PDF
+# # Pokazuje tekst wyciągnięty z pliku PDF
+# # ================================================================
+# @tylko_pacjentka
+# def szczegoly_pdf(request, plik_id):
+#     pacjentka = request.user.pacjentka
+#     # get_object_or_404 sprawdza że plik należy do tej pacjentki
+#     plik = get_object_or_404(PlikBadan, id=plik_id, pacjentka=pacjentka)
+#     return render(request, 'monitor/szczegoly_pdf.html', {'plik': plik})
 # ================================================================
 # WIDOK – Panel lekarza
 # Dostępny tylko dla zalogowanych lekarzy
