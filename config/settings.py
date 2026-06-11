@@ -23,10 +23,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-hm5mxk_wt$7@u8!iqsf21ziyx(w2i+4n#7mhz0s+m%m)_-(j1w'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False  # było True
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = ['Agnes02.pythonanywhere.com'] #było puste
 
 # Application definition
 
@@ -127,6 +126,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 import os
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'monitor', 'static')]
+
+STATIC_ROOT = '/home/Agnes02/ciaza_monitor/staticfiles' #nowa linia
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 LOGIN_URL = 'login'
