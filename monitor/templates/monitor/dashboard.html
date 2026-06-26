@@ -27,99 +27,204 @@
         </div>
     </div>
 
-    <!-- Recepty do realizacji -->
-    <div class="col-md-4 mb-4">
+    <!-- Recepty -->
+    <div class="col-md-8 mb-4">
         <div class="card h-100">
-            <div class="card-header bg-danger text-white fw-bold">
-                <i class="bi bi-capsule-pill me-2"></i>Recepty do realizacji
+            <div class="card-header fw-bold">
+                <i class="bi bi-capsule-pill me-2"></i>Recepty
             </div>
-            <ul class="list-group list-group-flush">
-                {% for recepta in recepty %}
-                <li class="list-group-item">
-                    <strong>{{ recepta.nazwa_leku }}</strong><br>
-                    <small class="text-muted">{{ recepta.dawkowanie }}</small>
-                    {% if recepta.uwagi %}
-                        <br><small class="text-muted fst-italic">
-                            {{ recepta.uwagi }}
-                        </small>
-                    {% endif %}
+
+            <ul class="nav nav-tabs px-3 pt-2" id="recepty-tab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="tab-w-realizacji-btn"
+                            data-bs-toggle="tab" data-bs-target="#tab-w-realizacji"
+                            type="button" role="tab">
+                        W realizacji
+                        <span class="badge bg-primary ms-1">{{ paginator_recepty_realizacja.count }}</span>
+                    </button>
                 </li>
-                {% empty %}
-                <li class="list-group-item text-muted text-center py-4">
-                    <i class="bi bi-check-circle text-success d-block mb-2"
-                       style="font-size:1.5rem"></i>
-                    Brak recept do realizacji
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tab-zrealizowane-btn"
+                            data-bs-toggle="tab" data-bs-target="#tab-zrealizowane"
+                            type="button" role="tab">
+                        Zrealizowane
+                        <span class="badge bg-secondary ms-1">{{ paginator_recepty_zrealizowane.count }}</span>
+                    </button>
                 </li>
-                {% endfor %}
             </ul>
-        </div>
-    </div>
 
-    <!-- Ostatnie pomiary -->
-    <div class="card mt-2">
-        <div class="card-header fw-bold">
-            <i class="bi bi-activity me-2"></i>Ostatnie pomiary
-        </div>
-        <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th>Rodzaj</th>
-                        <th>Wartość</th>
-                        <th>Data</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Pomiary inne niż ciśnienie -->
-                    {% for p in ostatnie_pomiary %}
-                    <tr>
-                        <td>{{ p.get_typ_nazwa }}</td>
-                        <td><strong>{{ p.wartosc }}</strong></td>
-                        <td>{{ p.data_pomiaru|date:"d.m.Y H:i" }}</td>
-                    </tr>
+            <div class="tab-content">
+
+                <!-- Zakładka: W realizacji -->
+                <div class="tab-pane fade show active p-3" id="tab-w-realizacji" role="tabpanel">
+                    {% for r in recepty_w_realizacji %}
+                    <div class="card mb-2 border-danger-subtle">
+                        <div class="card-body py-2">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <strong>{{ r.nazwa_leku }}</strong><br>
+                                    <small class="text-muted">{{ r.dawkowanie }}</small>
+                                    {% if r.uwagi %}
+                                        <br><small class="text-muted fst-italic">{{ r.uwagi }}</small>
+                                    {% endif %}
+                                    <br><small class="text-muted">
+                                        Kod: {{ r.kod_recepty|default:"—" }} ·
+                                        Wypisano: {{ r.data_wypisania|date:"d.m.Y" }}
+                                    </small>
+                                </div>
+                                <div class="d-flex flex-column gap-1">
+                                    <a href="{% url 'recepta_pdf' r.id %}" class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-download me-1"></i>Pobierz
+                                    </a>
+                                    <form method="POST" action="{% url 'recepta_zrealizowano' r.id %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-success btn-sm w-100">
+                                            <i class="bi bi-check-circle me-1"></i>Zrealizowano
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted text-center py-3 mb-0">
+                        <i class="bi bi-check-circle text-success me-1"></i>Brak recept w realizacji
+                    </p>
                     {% endfor %}
 
-                    <!-- Ciśnienie jako jeden wiersz -->
-                    {% for s in ostatnie_cisnienia_s %}
-                        {% for r in ostatnie_cisnienia_r %}
-                            {% if s.data_pomiaru == r.data_pomiaru %}
-                            <tr>
-                                <td>
-                                    
-                                    Ciśnienie krwi (mmHg)
-                                </td>
-                                <td>
-                                    <strong>
-                                        {{ s.wartosc|floatformat:0 }}/{{ r.wartosc|floatformat:0 }}
-                                    </strong> 
-                                    <!-- <small class="text-muted">mmHg</small> -->
-                                </td>
-                                <td>{{ s.data_pomiaru|date:"d.m.Y H:i" }}</td>
-                            </tr>
+                    {% if paginator_recepty_realizacja.num_pages > 1 %}
+                    <nav>
+                        <ul class="pagination pagination-sm justify-content-center mb-0">
+                            {% if recepty_w_realizacji.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?strona_recept_realizacja={{ recepty_w_realizacji.previous_page_number }}">&laquo;</a>
+                            </li>
                             {% endif %}
-                        {% endfor %}
+                            {% for numer in paginator_recepty_realizacja.page_range %}
+                            <li class="page-item {% if numer == recepty_w_realizacji.number %}active{% endif %}">
+                                <a class="page-link" href="?strona_recept_realizacja={{ numer }}">{{ numer }}</a>
+                            </li>
+                            {% endfor %}
+                            {% if recepty_w_realizacji.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?strona_recept_realizacja={{ recepty_w_realizacji.next_page_number }}">&raquo;</a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                </div>
+
+                <!-- Zakładka: Zrealizowane -->
+                <div class="tab-pane fade p-3" id="tab-zrealizowane" role="tabpanel">
+                    {% for r in recepty_zrealizowane %}
+                    <div class="card mb-2 border-success-subtle">
+                        <div class="card-body py-2">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <strong>{{ r.nazwa_leku }}</strong><br>
+                                    <small class="text-muted">{{ r.dawkowanie }}</small>
+                                    {% if r.uwagi %}
+                                        <br><small class="text-muted fst-italic">{{ r.uwagi }}</small>
+                                    {% endif %}
+                                    <br><small class="text-muted">
+                                        Kod: {{ r.kod_recepty|default:"—" }} ·
+                                        Zrealizowano: {{ r.data_realizacji|date:"d.m.Y H:i" }}
+                                    </small>
+                                </div>
+                                <a href="{% url 'recepta_pdf' r.id %}" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-download me-1"></i>Pobierz
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted text-center py-3 mb-0">
+                        <i class="bi bi-inbox me-1"></i>Brak zrealizowanych recept
+                    </p>
                     {% endfor %}
 
-                    {% if not ostatnie_pomiary and not ostatnie_cisnienia_s %}
-                    <tr>
-                        <td colspan="3" class="text-center text-muted py-3">
-                            <i class="bi bi-inbox me-1"></i>
-                            Brak pomiarów.
-                            <a href="{% url 'pomiary' %}">Dodaj pierwszy</a>
-                        </td>
-                    </tr>
+                    {% if paginator_recepty_zrealizowane.num_pages > 1 %}
+                    <nav>
+                        <ul class="pagination pagination-sm justify-content-center mb-0">
+                            {% if recepty_zrealizowane.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?strona_recept_zrealizowane={{ recepty_zrealizowane.previous_page_number }}">&laquo;</a>
+                            </li>
+                            {% endif %}
+                            {% for numer in paginator_recepty_zrealizowane.page_range %}
+                            <li class="page-item {% if numer == recepty_zrealizowane.number %}active{% endif %}">
+                                <a class="page-link" href="?strona_recept_zrealizowane={{ numer }}">{{ numer }}</a>
+                            </li>
+                            {% endfor %}
+                            {% if recepty_zrealizowane.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?strona_recept_zrealizowane={{ recepty_zrealizowane.next_page_number }}">&raquo;</a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
                     {% endif %}
-                </tbody>
-            </table>
+                </div>
+
+            </div>
         </div>
-        <div class="card-footer bg-white">
-            <a href="{% url 'pomiary' %}" class="btn btn-sm btn-outline-primary">
-                <i class="bi bi-arrow-right me-1"></i>Zobacz wszystkie
-            </a>
-        </div>
-    </div>
     </div>
 
+</div>
+
+
+<!-- Ostatnie pomiary -->
+<div class="card mt-2">
+    <div class="card-header fw-bold">
+        <i class="bi bi-activity me-2"></i>Ostatnie pomiary
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Rodzaj</th>
+                    <th>Wartość</th>
+                    <th>Data</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for w in ostatnie_pomiary %}
+                <tr>
+                    <td>
+                        {% if w.jest_cisnieniem %}
+                            <i class="bi bi-heart-pulse me-1 text-danger"></i>
+                        {% endif %}
+                        {{ w.rodzaj }}
+                    </td>
+                    <td>
+                        {% if w.jest_cisnieniem %}
+                            <strong>{{ w.skurczowe|floatformat:0 }}/{{ w.rozkurczowe|floatformat:0 }}</strong>
+                            <small class="text-muted">mmHg</small>
+                        {% else %}
+                            <strong>{{ w.wartosc }}</strong>
+                        {% endif %}
+                    </td>
+                    <td>{{ w.data_pomiaru|date:"d.m.Y H:i" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="3" class="text-center text-muted py-3">
+                        <i class="bi bi-inbox me-1"></i>
+                        Brak pomiarów.
+                        <a href="{% url 'pomiary' %}">Dodaj pierwszy</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="card-footer bg-white">
+        <a href="{% url 'pomiary' %}" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-arrow-right me-1"></i>Zobacz wszystkie
+        </a>
+    </div>
+</div>
 <!-- </div> -->
 
 <!-- Zaplanowane wizyty przez lekarza -->

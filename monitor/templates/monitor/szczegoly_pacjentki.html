@@ -20,207 +20,321 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════
-     GÓRNY RZĄD: Wizyty | Pliki badań – szybki podgląd
+     UKŁAD 2 KOLUMNY:
+     LEWA: Zaplanowane wizyty + Umów wizytę + Recepty
+     PRAWA: Wgrane wyniki badań + Wykres pomiarów + Historia pomiarów + Historia samopoczucia
      ═══════════════════════════════════════════════════════════ -->
-<div class="row mb-4">
+<div class="row align-items-start">
 
-    <!-- Zaplanowane wizyty -->
-    <div class="col-md-6 mb-3 mb-md-0">
-        <div class="card h-100">
-            <div class="card-header fw-bold">
-                <i class="bi bi-calendar3 me-2"></i>Zaplanowane wizyty
-            </div>
-            <ul class="list-group list-group-flush">
-                {% for w in wizyty %}
-                <li class="list-group-item">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <strong>{{ w.specjalizacja }}</strong><br>
-                            <small>
-                                <i class="bi bi-geo-alt me-1"></i>{{ w.miejsce }}
-                            </small><br>
-                            <small>
-                                <i class="bi bi-clock me-1"></i>
-                                {{ w.data_wizyty|date:"d.m.Y H:i" }}
-                            </small>
-                        </div>
-                        <span class="badge {% if w.odbyta %}bg-success{% else %}bg-warning text-dark{% endif %}">
-                            {% if w.odbyta %}Odbyta{% else %}Zaplanowana{% endif %}
-                        </span>
+    <!-- LEWA STRONA -->
+    <div class="col-md-6 mb-4 mb-md-0">
+<!-- Zaplanowane wizyty -->
+        <div class="card mb-4">
+                    <div class="card-header fw-bold">
+                        <i class="bi bi-calendar3 me-2"></i>Zaplanowane wizyty
                     </div>
-                </li>
-                {% empty %}
-                <li class="list-group-item text-muted text-center py-3">
-                    <i class="bi bi-calendar-x d-block mb-1" style="font-size:1.5rem"></i>
-                    Brak zaplanowanych wizyt
-                </li>
-                {% endfor %}
-            </ul>
-        </div>
-    </div>
+                    <ul class="list-group list-group-flush">
+                        {% for w in wizyty %}
+                        <li class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <strong>{{ w.specjalizacja }}</strong><br>
+                                    <small>
+                                        <i class="bi bi-geo-alt me-1"></i>{{ w.miejsce }}
+                                    </small><br>
+                                    <small>
+                                        <i class="bi bi-clock me-1"></i>
+                                        {{ w.data_wizyty|date:"d.m.Y H:i" }}
+                                    </small>
+                                </div>
+                                <span class="badge {% if w.odbyta %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                                    {% if w.odbyta %}Odbyta{% else %}Zaplanowana{% endif %}
+                                </span>
+                            </div>
+                        </li>
+                        {% empty %}
+                        <li class="list-group-item text-muted text-center py-3">
+                            <i class="bi bi-calendar-x d-block mb-1" style="font-size:1.5rem"></i>
+                            Brak zaplanowanych wizyt
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
 
-    <!-- Wgrane pliki badań -->
-    <div class="col-md-6">
-        <div class="card h-100">
-            <div class="card-header bg-danger text-white fw-bold">
-                <i class="bi bi-file-earmark-medical-fill me-2"></i>
-                Wgrane wyniki badań
-            </div>
-            <ul class="list-group list-group-flush">
-                {% for plik in pliki_badan %}
-                <li class="list-group-item">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
-                            <strong>{{ plik.nazwa_pliku }}</strong><br>
-                            <small class="text-muted">
-                                <i class="bi bi-clock me-1"></i>
-                                {{ plik.data_wgrania|date:"d.m.Y H:i" }}
-                                {% if plik.opis %} · {{ plik.opis }}{% endif %}
-                            </small>
-                        </div>
-                        <a href="{{ plik.plik.url }}" target="_blank"
-                           class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-eye me-1"></i>Otwórz
-                        </a>
+<!-- Formularz wizyty -->
+        <div class="card mb-4">
+                    <div class="card-header fw-bold" style="background-color:#fff3cd;">
+                        <i class="bi bi-calendar-plus-fill me-2 text-warning"></i>
+                        Umów wizytę
                     </div>
-                </li>
-                {% empty %}
-                <li class="list-group-item text-muted text-center py-3">
-                    <i class="bi bi-inbox d-block mb-1" style="font-size:1.5rem"></i>
-                    Brak wgranych plików
-                </li>
-                {% endfor %}
-            </ul>
-        </div>
-    </div>
+                    <div class="card-body">
+                        <div class="alert alert-light border mb-3">
+                            <i class="bi bi-person-circle me-2 text-primary"></i>
+                            Wizyta dla: <strong>{{ pacjentka }}</strong>
+                        </div>
+                        <form method="POST">
+                            {% csrf_token %}
+                            <input type="hidden" name="akcja" value="umow_wizyte">
+                            {% for pole in f_wizyta %}
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">{{ pole.label }}</label>
+                                {{ pole }}
+                                {% if pole.errors %}
+                                    <div class="text-danger small mt-1">{{ pole.errors }}</div>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                            <button type="submit" class="btn btn-warning w-100">
+                                <i class="bi bi-calendar-check me-2"></i>Umów wizytę
+                            </button>
+                        </form>
+                    </div>
+                </div>
 
-</div>
-
-<!-- ═══════════════════════════════════════════════════════════
-     ŚRODKOWY RZĄD: Formularze (lewa) | Pomiary + samopoczucie (prawa)
-     ═══════════════════════════════════════════════════════════ -->
-<div class="row">
-
-    <!-- LEWA KOLUMNA: Formularze + recepty -->
-    <div class="col-md-5">
-
-        <!-- Formularz recepty -->
+<!-- Recepty: zakładki -->
         <div class="card mb-4">
             <div class="card-header bg-danger text-white fw-bold">
-                <i class="bi bi-capsule-pill me-2"></i>Wypisz receptę
+                <i class="bi bi-capsule-pill me-2"></i>Recepty
             </div>
-            <div class="card-body">
-                <div class="alert alert-light border mb-3">
-                    <i class="bi bi-person-circle me-2 text-primary"></i>
-                    Recepta dla: <strong>{{ pacjentka }}</strong>
-                </div>
-                <form method="POST">
-                    {% csrf_token %}
-                    <input type="hidden" name="akcja" value="wypisz_recepte">
-                    {% for pole in f_recepta %}
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">{{ pole.label }}</label>
-                        {{ pole }}
-                        {% if pole.errors %}
-                            <div class="text-danger small mt-1">{{ pole.errors }}</div>
-                        {% endif %}
-                    </div>
-                    {% endfor %}
-                    <button type="submit" class="btn btn-danger w-100">
-                        <i class="bi bi-file-earmark-plus me-2"></i>Wypisz receptę
+        
+            <ul class="nav nav-tabs px-3 pt-2" id="recepty-tab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="tab-wypisz-btn"
+                            data-bs-toggle="tab" data-bs-target="#tab-wypisz"
+                            type="button" role="tab">
+                        Wypisz receptę
                     </button>
-                </form>
-            </div>
-        </div>
-
-        <!-- Formularz wizyty -->
-        <div class="card mb-4">
-            <div class="card-header fw-bold" style="background-color:#fff3cd;">
-                <i class="bi bi-calendar-plus-fill me-2 text-warning"></i>
-                Umów wizytę
-            </div>
-            <div class="card-body">
-                <div class="alert alert-light border mb-3">
-                    <i class="bi bi-person-circle me-2 text-primary"></i>
-                    Wizyta dla: <strong>{{ pacjentka }}</strong>
-                </div>
-                <form method="POST">
-                    {% csrf_token %}
-                    <input type="hidden" name="akcja" value="umow_wizyte">
-                    {% for pole in f_wizyta %}
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">{{ pole.label }}</label>
-                        {{ pole }}
-                        {% if pole.errors %}
-                            <div class="text-danger small mt-1">{{ pole.errors }}</div>
-                        {% endif %}
-                    </div>
-                    {% endfor %}
-                    <button type="submit" class="btn btn-warning w-100">
-                        <i class="bi bi-calendar-check me-2"></i>Umów wizytę
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tab-w-realizacji-btn"
+                            data-bs-toggle="tab" data-bs-target="#tab-w-realizacji"
+                            type="button" role="tab">
+                        W realizacji
+                        <span class="badge bg-primary ms-1">{{ paginator_recepty_realizacja.count }}</span>
                     </button>
-                </form>
-            </div>
-        </div>
-
-        <!-- Lista wypisanych recept -->
-        <div class="card">
-            <div class="card-header bg-danger text-white fw-bold">
-                <i class="bi bi-prescription2 me-2"></i>Wypisane recepty
-            </div>
-            <ul class="list-group list-group-flush">
-                {% for r in recepty %}
-                <li class="list-group-item">
-                    <strong>{{ r.nazwa_leku }}</strong><br>
-                    <small class="text-muted">{{ r.dawkowanie }}</small>
-                    {% if r.uwagi %}
-                        <br><small class="text-muted fst-italic">{{ r.uwagi }}</small>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tab-zrealizowane-btn"
+                            data-bs-toggle="tab" data-bs-target="#tab-zrealizowane"
+                            type="button" role="tab">
+                        Zrealizowane
+                        <span class="badge bg-secondary ms-1">{{ paginator_recepty_zrealizowane.count }}</span>
+                    </button>
+                </li>
+            </ul>
+        
+            <div class="tab-content">
+        
+                <!-- Zakładka: Wypisz receptę -->
+                <div class="tab-pane fade show active p-3" id="tab-wypisz" role="tabpanel">
+                    <div class="alert alert-light border mb-3">
+                        <i class="bi bi-person-circle me-2 text-primary"></i>
+                        Recepta dla: <strong>{{ pacjentka }}</strong>
+                    </div>
+                    <form method="POST">
+                        {% csrf_token %}
+                        <input type="hidden" name="akcja" value="wypisz_recepte">
+                        {% for pole in f_recepta %}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">{{ pole.label }}</label>
+                            {{ pole }}
+                            {% if pole.errors %}
+                                <div class="text-danger small mt-1">{{ pole.errors }}</div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                        <button type="submit" class="btn btn-danger w-100">
+                            <i class="bi bi-file-earmark-plus me-2"></i>Wypisz receptę
+                        </button>
+                    </form>
+                </div>
+        
+                <!-- Zakładka: W realizacji -->
+                <div class="tab-pane fade p-3" id="tab-w-realizacji" role="tabpanel">
+                    {% for r in recepty_w_realizacji %}
+                    <div class="card mb-2 border-danger-subtle">
+                        <div class="card-body py-2">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <strong>{{ r.nazwa_leku }}</strong><br>
+                                    <small class="text-muted">{{ r.dawkowanie }}</small>
+                                    {% if r.uwagi %}
+                                        <br><small class="text-muted fst-italic">{{ r.uwagi }}</small>
+                                    {% endif %}
+                                    <br><small class="text-muted">
+                                        Kod: {{ r.kod_recepty|default:"—" }} ·
+                                        Wypisano: {{ r.data_wypisania|date:"d.m.Y" }}
+                                    </small>
+                                </div>
+                                <div class="d-flex flex-column gap-1">
+                                    <a href="{% url 'recepta_pdf' r.id %}?podglad=1" target="_blank"
+                                       class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-eye me-1"></i>Podgląd
+                                    </a>
+                                    <form method="POST" action="{% url 'recepta_usun' r.id %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-outline-danger btn-sm w-100">
+                                            <i class="bi bi-trash me-1"></i>Usuń
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted text-center py-3 mb-0">
+                        <i class="bi bi-inbox me-1"></i>Brak recept w realizacji
+                    </p>
+                    {% endfor %}
+        
+                    {% if paginator_recepty_realizacja.num_pages > 1 %}
+                    <nav>
+                        <ul class="pagination pagination-sm justify-content-center mb-0">
+                            {% if recepty_w_realizacji.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?strona_recept_realizacja={{ recepty_w_realizacji.previous_page_number }}">&laquo;</a>
+                            </li>
+                            {% endif %}
+                            {% for numer in paginator_recepty_realizacja.page_range %}
+                            <li class="page-item {% if numer == recepty_w_realizacji.number %}active{% endif %}">
+                                <a class="page-link" href="?strona_recept_realizacja={{ numer }}">{{ numer }}</a>
+                            </li>
+                            {% endfor %}
+                            {% if recepty_w_realizacji.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?strona_recept_realizacja={{ recepty_w_realizacji.next_page_number }}">&raquo;</a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
                     {% endif %}
-                </li>
-                {% empty %}
-                <li class="list-group-item text-muted text-center py-3">
-                    Brak wypisanych recept
-                </li>
-                {% endfor %}
-            </ul>
+                </div>
+        
+                <!-- Zakładka: Zrealizowane -->
+                <div class="tab-pane fade p-3" id="tab-zrealizowane" role="tabpanel">
+                    {% for r in recepty_zrealizowane %}
+                    <div class="card mb-2 border-success-subtle">
+                        <div class="card-body py-2">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <strong>{{ r.nazwa_leku }}</strong><br>
+                                    <small class="text-muted">{{ r.dawkowanie }}</small>
+                                    {% if r.uwagi %}
+                                        <br><small class="text-muted fst-italic">{{ r.uwagi }}</small>
+                                    {% endif %}
+                                    <br><small class="text-muted">
+                                        Kod: {{ r.kod_recepty|default:"—" }} ·
+                                        Zrealizowano: {{ r.data_realizacji|date:"d.m.Y H:i" }}
+                                    </small>
+                                </div>
+                                <a href="{% url 'recepta_pdf' r.id %}?podglad=1" target="_blank"
+                                   class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-eye me-1"></i>Podgląd
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted text-center py-3 mb-0">
+                        <i class="bi bi-inbox me-1"></i>Brak zrealizowanych recept
+                    </p>
+                    {% endfor %}
+        
+                    {% if paginator_recepty_zrealizowane.num_pages > 1 %}
+                    <nav>
+                        <ul class="pagination pagination-sm justify-content-center mb-0">
+                            {% if recepty_zrealizowane.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?strona_recept_zrealizowane={{ recepty_zrealizowane.previous_page_number }}">&laquo;</a>
+                            </li>
+                            {% endif %}
+                            {% for numer in paginator_recepty_zrealizowane.page_range %}
+                            <li class="page-item {% if numer == recepty_zrealizowane.number %}active{% endif %}">
+                                <a class="page-link" href="?strona_recept_zrealizowane={{ numer }}">{{ numer }}</a>
+                            </li>
+                            {% endfor %}
+                            {% if recepty_zrealizowane.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?strona_recept_zrealizowane={{ recepty_zrealizowane.next_page_number }}">&raquo;</a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                </div>
+        
+            </div>
         </div>
-
     </div>
 
-    <!-- PRAWA KOLUMNA: Wykres + pomiary + samopoczucie -->
-    <div class="col-md-7">
-
-        <!-- Wykres pomiarów -->
+    <!-- PRAWA STRONA -->
+    <div class="col-md-6">
+<!-- Wgrane pliki badań + wykres pomiarów -->
         <div class="card mb-4">
-            <div class="card-header fw-bold">
-                <i class="bi bi-graph-up me-2"></i>Wykres pomiarów
-                <div class="btn-group btn-group-sm float-end">
-                    <button class="btn btn-outline-danger btn-sm"
-                            onclick="pokazWykres('glukoza', this)">
-                        Glukoza
-                    </button>
-                    <button class="btn btn-outline-primary btn-sm"
-                            onclick="pokazWykres('cisnienie', this)">
-                        Ciśnienie
-                    </button>
+                    <div class="card-header bg-danger text-white fw-bold">
+                        <i class="bi bi-file-earmark-medical-fill me-2"></i>
+                        Wgrane wyniki badań
+                    </div>
+                    <ul class="list-group list-group-flush">
+                        {% for plik in pliki_badan %}
+                        <li class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
+                                    <strong>{{ plik.nazwa_pliku }}</strong><br>
+                                    <small class="text-muted">
+                                        <i class="bi bi-clock me-1"></i>
+                                        {{ plik.data_wgrania|date:"d.m.Y H:i" }}
+                                        {% if plik.opis %} · {{ plik.opis }}{% endif %}
+                                    </small>
+                                </div>
+                                <a href="{{ plik.plik.url }}" target="_blank"
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye me-1"></i>Otwórz
+                                </a>
+                            </div>
+                        </li>
+                        {% empty %}
+                        <li class="list-group-item text-muted text-center py-3">
+                            <i class="bi bi-inbox d-block mb-1" style="font-size:1.5rem"></i>
+                            Brak wgranych plików
+                        </li>
+                        {% endfor %}
+                    </ul>
                 </div>
-            </div>
-            <div class="card-body">
-                <canvas id="wykres" height="120"></canvas>
-                <p id="brak-danych" class="text-muted text-center d-none">
-                    <i class="bi bi-info-circle me-1"></i>
-                    Brak danych dla tego typu pomiaru
-                </p>
-            </div>
-        </div>
 
-        <!-- Filtrowanie pomiarów -->
+<!-- Wykres pomiarów -->
+        <div class="card mb-4">
+                    <div class="card-header fw-bold">
+                        <i class="bi bi-graph-up me-2"></i>Wykres pomiarów
+                        <div class="btn-group btn-group-sm float-end">
+                            <button class="btn btn-outline-danger btn-sm"
+                                    onclick="pokazWykres('glukoza', this)">
+                                Glukoza
+                            </button>
+                            <button class="btn btn-outline-primary btn-sm"
+                                    onclick="pokazWykres('cisnienie', this)">
+                                Ciśnienie
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="wykres" height="120"></canvas>
+                        <p id="brak-danych" class="text-muted text-center d-none">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Brak danych dla tego typu pomiaru
+                        </p>
+                    </div>
+                </div>
+
+<!-- Historia pomiarów (filtr + tabela w jednej karcie) -->
         <div class="card mb-4">
             <div class="card-header fw-bold">
-                <i class="bi bi-funnel-fill me-2"></i>Filtruj historię pomiarów
+                <i class="bi bi-table me-2"></i>Historia pomiarów
             </div>
-            <div class="card-body">
+        
+            <!-- Formularz filtrowania -->
+            <div class="card-body border-bottom bg-light py-3">
                 <form method="GET" action="{% url 'szczegoly_pacjentki' pacjentka.id %}">
                     <div class="row g-2">
                         <div class="col-12">
@@ -253,13 +367,7 @@
                     </div>
                 </form>
             </div>
-        </div>
-
-        <!-- Historia pomiarów -->
-        <div class="card mb-4">
-            <div class="card-header fw-bold">
-                <i class="bi bi-table me-2"></i>Historia pomiarów
-            </div>
+        
             <div class="table-responsive">
                 <table class="table table-hover table-sm mb-0">
                     <thead class="table-light">
@@ -270,148 +378,111 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for p in pomiary %}
+                        {% for w in wiersze %}
                         <tr>
-                            <td>{{ p.get_typ_nazwa }}</td>
-                            <td><strong>{{ p.wartosc }}</strong></td>
-                            <td>{{ p.data_pomiaru|date:"d.m.Y H:i" }}</td>
-                        </tr>
-                        {% endfor %}
-
-                        {% for s in historia_cisnienia %}
-                            {% for r in historia_cisnienia_r %}
-                                {% if s.data_pomiaru == r.data_pomiaru %}
-                                <tr>
-                                    <td>
-                                        <i class="bi bi-heart-pulse me-1 text-danger"></i>
-                                        Ciśnienie krwi
-                                    </td>
-                                    <td>
-                                        <strong>{{ s.wartosc|floatformat:0 }}/{{ r.wartosc|floatformat:0 }}</strong>
-                                        <small class="text-muted">mmHg</small>
-                                    </td>
-                                    <td>{{ s.data_pomiaru|date:"d.m.Y H:i" }}</td>
-                                </tr>
+                            <td>
+                                {% if w.jest_cisnieniem %}
+                                    <i class="bi bi-heart-pulse me-1 text-danger"></i>
                                 {% endif %}
-                            {% endfor %}
-                        {% endfor %}
-
-                        {% if not pomiary and not historia_cisnienia %}
+                                {{ w.rodzaj }}
+                            </td>
+                            <td>
+                                {% if w.jest_cisnieniem %}
+                                    <strong>{{ w.skurczowe|floatformat:0 }}/{{ w.rozkurczowe|floatformat:0 }}</strong>
+                                    <small class="text-muted">mmHg</small>
+                                {% else %}
+                                    <strong>{{ w.wartosc }}</strong>
+                                {% endif %}
+                            </td>
+                            <td>{{ w.data_pomiaru|date:"d.m.Y H:i" }}</td>
+                        </tr>
+                        {% empty %}
                         <tr>
                             <td colspan="3" class="text-center text-muted py-3">
                                 Brak pomiarów
                             </td>
                         </tr>
-                        {% endif %}
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
-
+        
             <!-- Kontrolka paginacji -->
-            {% with pomiary as strona %}
-            {% if strona.paginator.num_pages > 1 or historia_cisnienia.paginator.num_pages > 1 %}
+            {% if paginator.num_pages > 1 %}
             <div class="card-footer">
-                <form method="GET" action="{% url 'szczegoly_pacjentki' pacjentka.id %}"
-                      class="d-flex align-items-center gap-2 mb-2 flex-wrap">
-                    {% if request.GET.typ %}<input type="hidden" name="typ" value="{{ request.GET.typ }}">{% endif %}
-                    {% if request.GET.data_od %}<input type="hidden" name="data_od" value="{{ request.GET.data_od }}">{% endif %}
-                    {% if request.GET.data_do %}<input type="hidden" name="data_do" value="{{ request.GET.data_do }}">{% endif %}
-                    <label class="form-label mb-0 small fw-semibold">Wyników na stronę:</label>
-                    <select name="na_strone" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
-                        <option value="5"  {% if wynikow_na_strone == 5  %}selected{% endif %}>5</option>
-                        <option value="10" {% if wynikow_na_strone == 10 %}selected{% endif %}>10</option>
-                        <option value="20" {% if wynikow_na_strone == 20 %}selected{% endif %}>20</option>
-                        <option value="50" {% if wynikow_na_strone == 50 %}selected{% endif %}>50</option>
-                    </select>
-                    <span class="text-muted small">
-                        Strona {{ strona.number }} z {{ strona.paginator.num_pages }}
-                    </span>
-                </form>
-
+                
                 <nav>
                     <ul class="pagination pagination-sm mb-0 flex-wrap">
-                        {% if strona.has_previous %}
+                        {% if wiersze.has_previous %}
                         <li class="page-item">
                             <a class="page-link" href="?{% if request.GET.typ %}typ={{ request.GET.typ }}&{% endif %}{% if request.GET.data_od %}data_od={{ request.GET.data_od }}&{% endif %}{% if request.GET.data_do %}data_do={{ request.GET.data_do }}&{% endif %}na_strone={{ wynikow_na_strone }}&strona=1">
                                 <i class="bi bi-chevron-double-left"></i>
                             </a>
                         </li>
                         <li class="page-item">
-                            <a class="page-link" href="?{% if request.GET.typ %}typ={{ request.GET.typ }}&{% endif %}{% if request.GET.data_od %}data_od={{ request.GET.data_od }}&{% endif %}{% if request.GET.data_do %}data_do={{ request.GET.data_do }}&{% endif %}na_strone={{ wynikow_na_strone }}&strona={{ strona.previous_page_number }}">
+                            <a class="page-link" href="?{% if request.GET.typ %}typ={{ request.GET.typ }}&{% endif %}{% if request.GET.data_od %}data_od={{ request.GET.data_od }}&{% endif %}{% if request.GET.data_do %}data_do={{ request.GET.data_do }}&{% endif %}na_strone={{ wynikow_na_strone }}&strona={{ wiersze.previous_page_number }}">
                                 <i class="bi bi-chevron-left"></i>
                             </a>
                         </li>
                         {% endif %}
-
-                        {% for num in strona.paginator.page_range %}
-                            {% if num == strona.number %}
+        
+                        {% for num in paginator.page_range %}
+                            {% if num == wiersze.number %}
                             <li class="page-item active">
                                 <span class="page-link">{{ num }}</span>
                             </li>
-                            {% elif num >= strona.number|add:"-2" and num <= strona.number|add:"2" %}
+                            {% elif num >= wiersze.number|add:"-2" and num <= wiersze.number|add:"2" %}
                             <li class="page-item">
                                 <a class="page-link" href="?{% if request.GET.typ %}typ={{ request.GET.typ }}&{% endif %}{% if request.GET.data_od %}data_od={{ request.GET.data_od }}&{% endif %}{% if request.GET.data_do %}data_do={{ request.GET.data_do }}&{% endif %}na_strone={{ wynikow_na_strone }}&strona={{ num }}">{{ num }}</a>
                             </li>
                             {% endif %}
                         {% endfor %}
-
-                        {% if strona.has_next %}
+        
+                        {% if wiersze.has_next %}
                         <li class="page-item">
-                            <a class="page-link" href="?{% if request.GET.typ %}typ={{ request.GET.typ }}&{% endif %}{% if request.GET.data_od %}data_od={{ request.GET.data_od }}&{% endif %}{% if request.GET.data_do %}data_do={{ request.GET.data_do }}&{% endif %}na_strone={{ wynikow_na_strone }}&strona={{ strona.next_page_number }}">
+                            <a class="page-link" href="?{% if request.GET.typ %}typ={{ request.GET.typ }}&{% endif %}{% if request.GET.data_od %}data_od={{ request.GET.data_od }}&{% endif %}{% if request.GET.data_do %}data_do={{ request.GET.data_do }}&{% endif %}na_strone={{ wynikow_na_strone }}&strona={{ wiersze.next_page_number }}">
                                 <i class="bi bi-chevron-right"></i>
                             </a>
                         </li>
                         <li class="page-item">
-                            <a class="page-link" href="?{% if request.GET.typ %}typ={{ request.GET.typ }}&{% endif %}{% if request.GET.data_od %}data_od={{ request.GET.data_od }}&{% endif %}{% if request.GET.data_do %}data_do={{ request.GET.data_do }}&{% endif %}na_strone={{ wynikow_na_strone }}&strona={{ strona.paginator.num_pages }}">
+                            <a class="page-link" href="?{% if request.GET.typ %}typ={{ request.GET.typ }}&{% endif %}{% if request.GET.data_od %}data_od={{ request.GET.data_od }}&{% endif %}{% if request.GET.data_do %}data_do={{ request.GET.data_do }}&{% endif %}na_strone={{ wynikow_na_strone }}&strona={{ paginator.num_pages }}">
                                 <i class="bi bi-chevron-double-right"></i>
                             </a>
                         </li>
                         {% endif %}
                     </ul>
                 </nav>
-
-                <form method="GET" action="{% url 'szczegoly_pacjentki' pacjentka.id %}"
-                      class="d-flex align-items-center gap-2 mt-2">
-                    {% if request.GET.typ %}<input type="hidden" name="typ" value="{{ request.GET.typ }}">{% endif %}
-                    {% if request.GET.data_od %}<input type="hidden" name="data_od" value="{{ request.GET.data_od }}">{% endif %}
-                    {% if request.GET.data_do %}<input type="hidden" name="data_do" value="{{ request.GET.data_do }}">{% endif %}
-                    <input type="hidden" name="na_strone" value="{{ wynikow_na_strone }}">
-                    <label class="form-label mb-0 small">Przejdź do strony:</label>
-                    <input type="number" name="strona" class="form-control form-control-sm"
-                           style="width:70px" min="1" max="{{ strona.paginator.num_pages }}"
-                           value="{{ strona.number }}">
-                    <button type="submit" class="btn btn-outline-primary btn-sm">OK</button>
-                </form>
+        
+        
             </div>
             {% endif %}
-            {% endwith %}
         </div>
 
-        <!-- Historia samopoczucia -->
-        {% if historia_samopoczucia %}
-        <div class="card">
-            <div class="card-header fw-bold">
-                <i class="bi bi-journal-text me-2"></i>Historia samopoczucia
-            </div>
-            <ul class="list-group list-group-flush">
-                {% for wpis in historia_samopoczucia %}
-                <li class="list-group-item">
-                    <div class="d-flex justify-content-between">
-                        <strong>{{ wpis.get_samopoczucie_display|default:"–" }}</strong>
-                        <small class="text-muted">
-                            {{ wpis.data_pomiaru|date:"d.m.Y H:i" }}
-                        </small>
+<!-- Historia samopoczucia -->
+                {% if historia_samopoczucia %}
+                <div class="card">
+                    <div class="card-header fw-bold">
+                        <i class="bi bi-journal-text me-2"></i>Historia samopoczucia
                     </div>
-                    {% if wpis.notatka %}
-                        <small class="text-muted fst-italic">{{ wpis.notatka }}</small>
-                    {% endif %}
-                </li>
-                {% endfor %}
-            </ul>
-        </div>
-        {% endif %}
-
+                    <ul class="list-group list-group-flush">
+                        {% for wpis in historia_samopoczucia %}
+                        <li class="list-group-item">
+                            <div class="d-flex justify-content-between">
+                                <strong>{{ wpis.get_samopoczucie_display|default:"–" }}</strong>
+                                <small class="text-muted">
+                                    {{ wpis.data_pomiaru|date:"d.m.Y H:i" }}
+                                </small>
+                            </div>
+                            {% if wpis.notatka %}
+                                <small class="text-muted fst-italic">{{ wpis.notatka }}</small>
+                            {% endif %}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
     </div>
+
 </div>
 {% endblock %}
 

@@ -190,10 +190,12 @@ class Recepta(models.Model):
         on_delete=models.CASCADE,
         related_name='recepty'
     )
+    kod_recepty = models.CharField(max_length=6, unique=True)
     nazwa_leku = models.CharField(max_length=200)
     dawkowanie = models.CharField(max_length=200)
     data_wypisania = models.DateField(auto_now_add=True)
     do_zrealizowania = models.BooleanField(default=True)
+    data_realizacji = models.DateTimeField(null=True, blank=True)
     uwagi = models.TextField(blank=True)
 
     def __str__(self):

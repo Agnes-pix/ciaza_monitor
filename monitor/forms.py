@@ -208,14 +208,43 @@ class FormularzPomiaru(forms.ModelForm):
                 )
             try:
                 czesci = cisnienie.split('/')
-                int(czesci[0].strip())
-                int(czesci[1].strip())
+                skurczowe = int(czesci[0].strip())
+                rozkurczowe = int(czesci[1].strip())
             except (ValueError, IndexError):
                 raise forms.ValidationError(
                     'Nieprawidłowy format! Użyj np. 120/80'
                 )
-        return cleaned_data
 
+            # Blokada – rozkurczowe nie może być >= skurczowe
+            if rozkurczowe >= skurczowe:
+                raise forms.ValidationError(
+                    'Ciśnienie rozkurczowe nie może być większe lub równe '
+                    'ciśnieniu skurczowemu!'
+                )
+
+            # Sensowny zakres fizjologiczny (odcina literówki typu 1200/80)
+            if not (40 <= skurczowe <= 300):
+                raise forms.ValidationError(
+                    'Ciśnienie skurczowe musi być w zakresie 40–300 mmHg!'
+                )
+            if not (30 <= rozkurczowe <= 200):
+                raise forms.ValidationError(
+                    'Ciśnienie rozkurczowe musi być w zakresie 30–200 mmHg!'
+                )
+
+            # Warning – wartości nietypowe, ale niezablokowane
+            cleaned_data['cisnienie_warning'] = None
+            if skurczowe > 180 or rozkurczowe > 120:
+                cleaned_data['cisnienie_warning'] = (
+                    'Bardzo wysokie ciśnienie! Skontaktuj się z lekarzem.'
+                )
+            elif skurczowe < 90 or rozkurczowe < 60:
+                cleaned_data['cisnienie_warning'] = (
+                    'Bardzo niskie ciśnienie. Jeśli czujesz się słabo, '
+                    'skontaktuj się z lekarzem.'
+                )
+
+        return cleaned_data
 
 # ================================================================
 # FORMULARZ 5 – Samopoczucie pacjentki z notatką
@@ -255,19 +284,35 @@ class FormularzSamopoczucia(forms.ModelForm):
 class FormularzRecepty(forms.ModelForm):
     class Meta:
         model = Recepta
-        fields = ['pacjentka', 'nazwa_leku', 'dawkowanie', 'uwagi']
+        fields = ['pacjentka', 'kod_recepty', 'nazwa_leku', 'dawkowanie', 'uwagi']
         widgets = {
             'pacjentka': forms.Select(attrs={'class': 'form-select'}),
+            'kod_recepty': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'np. 521',
+                'maxlength': '6',
+            }),
             'uwagi': forms.Textarea(attrs={'rows': 3}),
         }
         labels = {
             'pacjentka': 'Wybierz pacjentkę',
+            'kod_recepty': 'Kod recepty',
             'nazwa_leku': 'Nazwa leku',
             'dawkowanie': 'Ilość opakowań',
             'uwagi': 'Uwagi dla pacjentki',
         }
 
-
+    def clean_kod_recepty(self):
+        kod = self.cleaned_data.get('kod_recepty')
+        if not kod:
+            raise forms.ValidationError('Kod recepty jest wymagany!')
+        if not kod.isdigit():
+            raise forms.ValidationError('Kod recepty może zawierać tylko cyfry!')
+        if len(kod) > 6:
+            raise forms.ValidationError('Kod recepty może mieć maksymalnie 6 cyfr!')
+        if Recepta.objects.filter(kod_recepty=kod).exists():
+            raise forms.ValidationError('Ten kod recepty już istnieje!')
+        return kod
 # ================================================================
 # FORMULARZ 7 – Recepta dla konkretnej pacjentki
 # Używany w szczegółach pacjentki – pacjentka przypisywana
@@ -276,16 +321,33 @@ class FormularzRecepty(forms.ModelForm):
 class FormularzReceptyDlaPacjentki(forms.ModelForm):
     class Meta:
         model = Recepta
-        fields = ['nazwa_leku', 'dawkowanie', 'uwagi']
+        fields = ['kod_recepty', 'nazwa_leku', 'dawkowanie', 'uwagi']
         widgets = {
+            'kod_recepty': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'np. 521',
+                'maxlength': '6',
+            }),
             'uwagi': forms.Textarea(attrs={'rows': 3}),
         }
         labels = {
+            'kod_recepty': 'Kod recepty',
             'nazwa_leku': 'Nazwa leku',
             'dawkowanie': 'Ilość opakowań',
             'uwagi': 'Uwagi dla pacjentki',
         }
 
+    def clean_kod_recepty(self):
+        kod = self.cleaned_data.get('kod_recepty')
+        if not kod:
+            raise forms.ValidationError('Kod recepty jest wymagany!')
+        if not kod.isdigit():
+            raise forms.ValidationError('Kod recepty może zawierać tylko cyfry!')
+        if len(kod) > 6:
+            raise forms.ValidationError('Kod recepty może mieć maksymalnie 6 cyfr!')
+        if Recepta.objects.filter(kod_recepty=kod).exists():
+            raise forms.ValidationError('Ten kod recepty już istnieje!')
+        return kod
 
 # ================================================================
 # FORMULARZ 8 – Umawianie wizyty przez lekarza
@@ -359,7 +421,7 @@ class FormularzFiltrowaniaPomiarow(forms.Form):
         ('glukoza', 'Poziom glukozy'),
         ('cisnienie', 'Ciśnienie krwi'),
         ('tetno', 'Tętno'),
-        ('samopoczucie', 'Samopoczucie'),
+        #('samopoczucie', 'Samopoczucie'),
     ]
 
     typ = forms.ChoiceField(

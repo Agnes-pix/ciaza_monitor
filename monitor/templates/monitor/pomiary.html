@@ -55,7 +55,7 @@
                             Ciśnienie (skurczowe/rozkurczowe)
                         </label>
                         {{ f_pomiar.cisnienie }}
-                        <div class="form-text">
+                        <div class="form-text" id="podpowiedz-cisnienie">
                             <i class="bi bi-info-circle me-1"></i>
                             Wpisz w formacie: <strong>120/80</strong>
                             (skurczowe/rozkurczowe)
@@ -160,6 +160,39 @@
             <div class="card-header fw-bold">
                 <i class="bi bi-table me-2"></i>Historia pomiarów
             </div>
+
+            <!-- Formularz filtrowania -->
+            <div class="card-body border-bottom bg-light py-3">
+                <form method="GET" class="row g-2 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label small fw-semibold mb-1">
+                            {{ f_filtr.typ.label }}
+                        </label>
+                        {{ f_filtr.typ }}
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-semibold mb-1">
+                            {{ f_filtr.data_od.label }}
+                        </label>
+                        {{ f_filtr.data_od }}
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-semibold mb-1">
+                            {{ f_filtr.data_do.label }}
+                        </label>
+                        {{ f_filtr.data_do }}
+                    </div>
+                    <div class="col-md-3 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-grow-1">
+                            <i class="bi bi-funnel-fill me-1"></i>Filtruj
+                        </button>
+                        <a href="{% url 'pomiary' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle"></i>
+                        </a>
+                    </div>
+                </form>
+            </div>
+
             <div class="table-responsive">
                 <table class="table table-hover mb-0 table-sm">
                     <thead class="table-light">
@@ -170,46 +203,70 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- Pomiary inne niż ciśnienie -->
-                        {% for p in historia_pomiarow %}
+                        {% for w in wiersze %}
                         <tr>
-                            <td>{{ p.get_typ_nazwa }}</td>
-                            <td><strong>{{ p.wartosc }}</strong></td>
-                            <td>{{ p.data_pomiaru|date:"d.m.Y H:i" }}</td>
-                        </tr>
-                        {% endfor %}
-
-                        <!-- Ciśnienie – łączymy skurczowe i rozkurczowe w jeden wiersz -->
-                        {% for s in historia_cisnienia %}
-                            {% for r in historia_cisnienia_r %}
-                                {% if s.data_pomiaru == r.data_pomiaru %}
-                                <tr>
-                                    <td>
-                                        <i class="bi bi-heart-pulse me-1 text-danger"></i>
-                                        Ciśnienie krwi
-                                    </td>
-                                    <td>
-                                        <strong>{{ s.wartosc|floatformat:0 }}/{{ r.wartosc|floatformat:0 }}</strong>
-                                        <small class="text-muted">mmHg</small>
-                                    </td>
-                                    <td>{{ s.data_pomiaru|date:"d.m.Y H:i" }}</td>
-                                </tr>
+                            <td>
+                                {% if w.jest_cisnieniem %}
+                                    <i class="bi bi-heart-pulse me-1 text-danger"></i>
                                 {% endif %}
-                            {% endfor %}
-                        {% endfor %}
-
-                        {% if not historia_pomiarow and not historia_cisnienia %}
+                                {{ w.rodzaj }}
+                            </td>
+                            <td>
+                                {% if w.jest_cisnieniem %}
+                                    <strong>{{ w.skurczowe|floatformat:0 }}/{{ w.rozkurczowe|floatformat:0 }}</strong>
+                                    <small class="text-muted">mmHg</small>
+                                {% else %}
+                                    <strong>{{ w.wartosc }}</strong>
+                                {% endif %}
+                            </td>
+                            <td>{{ w.data_pomiaru|date:"d.m.Y H:i" }}</td>
+                        </tr>
+                        {% empty %}
                         <tr>
                             <td colspan="3" class="text-center text-muted py-3">
                                 <i class="bi bi-inbox me-1"></i>Brak pomiarów
                             </td>
                         </tr>
-                        {% endif %}
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
+
+            <!-- Paginacja -->
+            {% if paginator.num_pages > 1 %}
+            <div class="card-footer d-flex justify-content-center">
+                <nav>
+                    <ul class="pagination pagination-sm mb-0">
+                        {% if wiersze.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?strona={{ wiersze.previous_page_number }}{% if request.GET.typ %}&typ={{ request.GET.typ }}{% endif %}{% if request.GET.data_od %}&data_od={{ request.GET.data_od }}{% endif %}{% if request.GET.data_do %}&data_do={{ request.GET.data_do }}{% endif %}">
+                                &laquo;
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        {% for numer in paginator.page_range %}
+                        <li class="page-item {% if numer == wiersze.number %}active{% endif %}">
+                            <a class="page-link" href="?strona={{ numer }}{% if request.GET.typ %}&typ={{ request.GET.typ }}{% endif %}{% if request.GET.data_od %}&data_od={{ request.GET.data_od }}{% endif %}{% if request.GET.data_do %}&data_do={{ request.GET.data_do }}{% endif %}">
+                                {{ numer }}
+                            </a>
+                        </li>
+                        {% endfor %}
+
+                        {% if wiersze.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?strona={{ wiersze.next_page_number }}{% if request.GET.typ %}&typ={{ request.GET.typ }}{% endif %}{% if request.GET.data_od %}&data_od={{ request.GET.data_od }}{% endif %}{% if request.GET.data_do %}&data_do={{ request.GET.data_do }}{% endif %}">
+                                &raquo;
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
         </div>
-    </div>
+
+        
 
         <!-- Historia samopoczucia -->
         {% if historia_samopoczucia %}

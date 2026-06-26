@@ -17,7 +17,15 @@ urlpatterns = [
     path('badania/', views.badania_pdf, name='badania_pdf'),
     path('badania/<int:plik_id>/usun/', views.usun_pdf, name='usun_pdf'),
     
-    
+     # Recepty – PDF i oznaczanie jako zrealizowane
+    path('recepta/<int:recepta_id>/pdf/',
+         views.recepta_pdf, name='recepta_pdf'),
+    path('recepta/<int:recepta_id>/zrealizowano/',
+         views.recepta_zrealizowano, name='recepta_zrealizowano'),
+    path('recepta/<int:recepta_id>/usun/',
+         views.recepta_usun, name='recepta_usun'),
+
+
     # Panel lekarza
     path('lekarz/', views.panel_lekarza, name='panel_lekarza'),
     path('lekarz/pacjentka/<int:pacjentka_id>/',

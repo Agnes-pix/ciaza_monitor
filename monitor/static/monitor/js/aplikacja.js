@@ -160,6 +160,121 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
+// ========================================================
+    // ELEMENT 2b – Walidacja ciśnienia (pole 120/80)
+    // ========================================================
+    // Co to robi: pole "cisnienie" jest osobne od "wartosc" i
+    // nie było wcześniej obsługiwane przez walidację w czasie
+    // rzeczywistym. Tu rozdzielamy 120/80 na dwie liczby,
+    // sprawdzamy logikę (rozkurczowe < skurczowe) oraz normy.
+    // ========================================================
+
+    const poleCisnienie = document.querySelector('input[name="cisnienie"]');
+
+    if (poleCisnienie) {
+        const komunikatCisnienie = document.createElement('div');
+        komunikatCisnienie.className = 'small mt-1';
+        poleCisnienie.insertAdjacentElement('afterend', komunikatCisnienie);
+
+        const normaSkurczowe = { min: 90, max: 140 };
+        const normaRozkurczowe = { min: 60, max: 90 };
+
+        poleCisnienie.addEventListener('input', function () {
+            const wpisanaWartosc = this.value.trim();
+            const podpowiedz = document.getElementById('podpowiedz-cisnienie');
+                if (podpowiedz) {
+                     podpowiedz.classList.toggle('d-none', wpisanaWartosc !== '');
+                        }
+
+            // Pole puste – nic nie pokazujemy
+            if (wpisanaWartosc === '') {
+                komunikatCisnienie.innerHTML = '';
+                poleCisnienie.classList.remove('is-valid', 'is-invalid');
+                return;
+            }
+
+            // Musi zawierać "/"
+            if (wpisanaWartosc.indexOf('/') === -1) {
+                komunikatCisnienie.innerHTML =
+                    '<span class="text-danger">' +
+                    '<i class="bi bi-x-circle me-1"></i>' +
+                    'Podaj ciśnienie w formacie 120/80' +
+                    '</span>';
+                poleCisnienie.classList.add('is-invalid');
+                poleCisnienie.classList.remove('is-valid');
+                return;
+            }
+
+            const czesci = wpisanaWartosc.split('/');
+            const skurczowe = parseInt(czesci[0].trim(), 10);
+            const rozkurczowe = parseInt(czesci[1] ? czesci[1].trim() : '', 10);
+
+            // Obie części muszą być liczbami
+            if (isNaN(skurczowe) || isNaN(rozkurczowe)) {
+                komunikatCisnienie.innerHTML =
+                    '<span class="text-danger">' +
+                    '<i class="bi bi-x-circle me-1"></i>' +
+                    'Nieprawidłowy format! Użyj np. 120/80' +
+                    '</span>';
+                poleCisnienie.classList.add('is-invalid');
+                poleCisnienie.classList.remove('is-valid');
+                return;
+            }
+
+            // Blokada logiczna – rozkurczowe nie może być >= skurczowe
+            if (rozkurczowe >= skurczowe) {
+                komunikatCisnienie.innerHTML =
+                    '<span class="text-danger">' +
+                    '<i class="bi bi-x-circle me-1"></i>' +
+                    'Ciśnienie rozkurczowe nie może być większe lub równe ' +
+                    'skurczowemu!' +
+                    '</span>';
+                poleCisnienie.classList.add('is-invalid');
+                poleCisnienie.classList.remove('is-valid');
+                return;
+            }
+
+            // Poza fizjologicznym zakresem – traktujemy jak błąd (literówka)
+            if (skurczowe < 40 || skurczowe > 300 ||
+                rozkurczowe < 30 || rozkurczowe > 200) {
+                komunikatCisnienie.innerHTML =
+                    '<span class="text-danger">' +
+                    '<i class="bi bi-x-circle me-1"></i>' +
+                    'Wartość poza możliwym zakresem fizjologicznym!' +
+                    '</span>';
+                poleCisnienie.classList.add('is-invalid');
+                poleCisnienie.classList.remove('is-valid');
+                return;
+            }
+
+            // Sprawdzenie norm – ostrzeżenie, ale nie blokada
+            const pozaNorma =
+                skurczowe < normaSkurczowe.min || skurczowe > normaSkurczowe.max ||
+                rozkurczowe < normaRozkurczowe.min || rozkurczowe > normaRozkurczowe.max;
+
+            if (pozaNorma) {
+                komunikatCisnienie.innerHTML =
+                    '<span class="text-warning">' +
+                    '<i class="bi bi-exclamation-triangle me-1"></i>' +
+                    'Wartość poza normą! Norma: ' +
+                    normaSkurczowe.min + '–' + normaSkurczowe.max + '/' +
+                    normaRozkurczowe.min + '–' + normaRozkurczowe.max + ' mmHg' +
+                    '. Skonsultuj z lekarzem.' +
+                    '</span>';
+                poleCisnienie.classList.remove('is-valid', 'is-invalid');
+            } else {
+                komunikatCisnienie.innerHTML =
+                    '<span class="text-success">' +
+                    '<i class="bi bi-check-circle me-1"></i>' +
+                    'Wartość w normie ✓' +
+                    '</span>';
+                poleCisnienie.classList.add('is-valid');
+                poleCisnienie.classList.remove('is-invalid');
+            }
+        });
+    }
+
+
     // ========================================================
     // ELEMENT 3 – Dynamiczne tworzenie podglądu pomiaru
     // ========================================================
